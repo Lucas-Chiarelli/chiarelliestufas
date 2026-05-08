@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Sistema de Gestão de Estufas</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="demo_data.js?v=13"></script>
+<style>
+  body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; }
+  .nav-btn.active { background:#15803d; color:white; }
+  .badge { display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:600; }
+  @media print {
+    .no-print { display: none !important; }
+    body { background: white !important; }
+    .print-area { box-shadow: none !important; padding: 0 !important; }
+    table { font-size: 11px; }
+  }
+</style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen" class="hidden min-h-screen flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+    <div class="text-center mb-6">
+      <div class="text-5xl mb-2">🌱</div>
+      <h1 class="text-2xl font-bold text-green-800">Gestão de Estufas</h1>
+      <p class="text-sm text-gray-500" id="modeLabel">Modo Demo</p>
+    </div>
+    <div id="loginErr" class="hidden bg-red-50 text-red-700 text-sm p-3 rounded mb-3"></div>
+    <form id="loginForm" class="space-y-3">
+      <div>
+        <label class="text-sm font-medium">Email</label>
+        <input id="loginEmail" type="email" required class="w-full mt-1 px-3 py-2 border rounded focus:ring-2 focus:ring-green-500 focus:outline-none">
+      </div>
+      <div>
+        <label class="text-sm font-medium">Senha</label>
+        <input id="loginPass" type="password" required minlength="6" class="w-full mt-1 px-3 py-2 border rounded focus:ring-2 focus:ring-green-500 focus:outline-none">
+      </div>
+      <button type="submit" class="w-full bg-green-700 hover:bg-green-800 text-white font-semibold py-2 rounded">Entrar</button>
+      <button type="button" id="signupBtn" class="w-full bg-white hover:bg-gray-50 border text-green-700 font-semibold py-2 rounded">Criar conta</button>
+    </form>
+    <div class="mt-5 pt-4 border-t text-xs text-gray-500">
+      <button id="cfgBtn" class="text-green-700 hover:underline">⚙️ Configurar Supabase (online)</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIG SUPABASE -->
+<div id="cfgScreen" class="hidden min-h-screen flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+    <h2 class="text-xl font-bold mb-4">Conectar ao Supabase</h2>
+    <p class="text-sm text-gray-600 mb-4">Cole as credenciais do seu projeto Supabase. Veja o README para passo-a-passo.</p>
+    <div class="space-y-3">
+      <div>
+        <label class="text-sm font-medium">Project URL</label>
+        <input id="cfgUrl" type="text" placeholder="https://xxxxx.supabase.co" class="w-full mt-1 px-3 py-2 border rounded">
+      </div>
+      <div>
+        <label class="text-sm font-medium">Anon (public) key</label>
+        <input id="cfgKey" type="text" placeholder="eyJ..." class="w-full mt-1 px-3 py-2 border rounded">
+      </div>
+      <button id="cfgSave" class="w-full bg-green-700 text-white py-2 rounded">Salvar e usar online</button>
+      <button id="cfgClear" class="w-full bg-gray-100 text-gray-700 py-2 rounded">Voltar para modo demo (local)</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" class="hidden min-h-screen">
+  <header class="bg-green-800 text-white px-4 py-3 flex items-center justify-between shadow no-print">
+    <div class="flex items-center gap-2">
+      <button id="menuBtn" class="md:hidden text-2xl">☰</button>
+      <span class="text-xl">🌱</span>
+      <h1 class="font-bold">Gestão de Estufas</h1>
+    </div>
+    <div class="flex items-center gap-3 text-sm">
+      <span id="userInfo" class="hidden md:inline"></span>
+      <span id="roleBadge" class="badge bg-yellow-400 text-yellow-900"></span>
+      <button id="resetBtn" title="Recarregar dados da planilha" class="bg-green-900 hover:bg-green-950 px-3 py-1 rounded">↻ Planilha</button>
+      <button id="logoutBtn" class="bg-green-900 hover:bg-green-950 px-3 py-1 rounded">Sair</button>
+    </div>
+  </header>
+
+  <div class="flex">
+    <aside id="sidebar" class="hidden md:block bg-green-900 text-white w-60 min-h-screen p-3 no-print">
+      <nav class="space-y-1 text-sm">
+        <button data-view="dashboard" class="nav-btn w-full text-left px-3 py-2 rounded hover:bg-green-800">📊 Dashboard</button>
+        <button data-view="visao_geral" class="nav-btn w-full text-left px-3 py-2 rounded hover:bg-green-800">📋 Visão geral</button>
+        <button data-view="consulta" class="nav-btn w-full text-left px-3 py-2 rounded hover:bg-green-800">🔎 Consulta / Filtros</button>
+
+        <div class="pt-3 pb-1 px-3 text-xs text-green-300 uppercase tracking-wider">Pagamentos</div>
+        <button data-view="pag_resumo" class="nav-btn w-full text-left px-3 py-2 rounded hover:bg-green-800">💰 Resumo geral</button>
+        <button data-view="pag_funcionario" class="nav-btn w-full text-left px-3 py-2 rounded hover:bg-green-800">👤 Por funcionário</button>
+        <button data-view="pag_estufa" class="nav-btn w-full text-left px-3 py-2 rounded hover:bg-green-800">🏠 Por estufa</button>
+        <button data-view="pag_mensal" class="nav-btn w-full text-left px-3 py-2 rounded hover:bg-green-800">📅 Totais mensais</button>
+
+        <div class="pt-3 pb-1 px-3 text-xs text-green-300 uppercase tracking-wider">Operação</div>
+        <button data-view="estoque" class="nav-btn w-full text-left px-3 py-2 rounded hover:bg-green-800">📦 Estoque</button>
+        <button data-view="vendas" class="nav-btn w-full text-left px-3 py-2 rounded hover:bg-green-800">🛒 Vendas / Saídas</button>
+        <button data-view="alertas" class="nav-btn w-full text-left px-3 py-2 rounded hover:bg-green-800">⏰ Alertas exame</button>
+        <button data-view="vencidos" class="nav-btn w-full text-left px-3 py-2 rounded hover:bg-green-800">⚠️ Bancadas vencidas</button>
+        <button data-view="vazias" class="nav-btn w-full text-left px-3 py-2 rounded hover:bg-green-800">📭 Bancadas vazias</button>
+
+        <div class="pt-3 pb-1 px-3 text-xs text-green-300 uppercase tracking-wider">Cadastros</div>
+        <button data-view="lotes" class="nav-btn w-full text-left px-3 py-2 rounded hover:bg-green-800">🌿 Lotes / Plantios</button>
+        <button data-view="estufas" class="nav-btn w-full text-left px-3 py-2 rounded hover:bg-green-800">🏠 Estufas / Bancadas</button>
+        <button data-view="funcionarios" class="nav-btn w-full text-left px-3 py-2 rounded hover:bg-green-800">👥 Funcionários</button>
+        <button data-view="precos" class="nav-btn w-full text-left px-3 py-2 rounded hover:bg-green-800">💵 Preços</button>
+        <button data-view="importar" class="nav-btn w-full text-left px-3 py-2 rounded hover:bg-green-800">📤 Importar Excel</button>
+      </nav>
+    </aside>
+
+    <main id="content" class="flex-1 p-4 md:p-6"></main>
+  </div>
+</div>
+
+<!-- Modal -->
+<div id="modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between p-4 border-b">
+      <h3 id="modalTitle" class="font-bold text-lg"></h3>
+      <button onclick="closeModal()" class="text-2xl text-gray-500 hover:text-gray-800">&times;</button>
+    </div>
+    <div id="modalBody" class="p-4"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="hidden fixed bottom-4 right-4 bg-gray-900 text-white px-4 py-2 rounded shadow-lg z-50"></div>
+
+<script src="app.js?v=13"></script>
+</body>
+</html>
+ fixed bottom-4 right-4 bg-gray-900 text-white px-4 py-2 rounded shadow-lg z-50"></div>
+
+<script src="app.js?v=13"></script>
+</body>
+</html>
+800">&times;</button>
+    </div>
+    <div id="modalBody" class="p-4"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="hidden fixed bottom-4 right-4 bg-gray-900 text-white px-4 py-2 rounded shadow-lg z-50"></div>
+
+<script src="app.js?v=13"></script>
+</body>
+</html>
