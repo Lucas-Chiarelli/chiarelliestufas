@@ -1,4 +1,4 @@
-# 🌱 Sistema de Gestão de Estufas
+# Chiarelli🌱 Sistema de Gestão de Estufas
 
 Sistema web completo para gestão de estufas agrícolas com controle de produção, estoque, alertas de exame e cálculo automático de pagamentos por funcionário (com regra de ciclo de 12 meses, retenção e aumento dinâmico de preços).
 
