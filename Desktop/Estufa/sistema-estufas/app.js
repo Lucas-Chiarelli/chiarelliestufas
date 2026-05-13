@@ -2179,7 +2179,3 @@ $$('.nav-btn').forEach(b => b.addEventListener('click', () => setView(b.dataset.
 $('#menuBtn').addEventListener('click', () => $('#sidebar').classList.toggle('hidden'));
 
 })();
-etView(b.dataset.view)));
-$('#menuBtn').addEventListener('click', () => $('#sidebar').classList.toggle('hidden'));
-
-})();
