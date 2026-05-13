@@ -2002,7 +2002,7 @@ window.gerarPlaquinhas = function() {
     <div class="bg-white p-4 rounded-xl shadow print-area">
       <div class="text-center mb-3 print-area">
         <h3 class="font-bold">PLANO DE PRODUÇÃO — ${escapeHtml(cfg.propriedade)}</h3>
-        <p class="text-xs text-gray-600">${escapeHtml(cfg.municipio)} · Nº Processo ${escapeHtml(cfg.processo)} · Estufa ${escapeHtml(et?.estufa?.nome || e.nome)}</p>
+        <p class="text-xs text-gray-600">${escapeHtml(cfg.municipio)} · Nº Processo ${escapeHtml(cfg.processo)} · Estufa ${escapeHtml(e.nome)}</p>
       </div>
       <div class="grid grid-cols-2 gap-2">
         ${etiquetas.map(renderEtiqueta).join('')}
