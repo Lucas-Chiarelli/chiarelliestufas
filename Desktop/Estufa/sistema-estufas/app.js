@@ -13,6 +13,7 @@ window.addEventListener('error', e => {
 });
 
 var STATE = { mode:'demo', supa:null, user:null, role:'admin', data:null, view:'dashboard' };
+window.STATE = STATE;  // expor pra onclick/onchange inline
 var SITIO_LABEL = { sao_jose:'São José', bela_vista:'Bela Vista', santo_antonio:'Santo Antônio' };
 
 var DB = {
@@ -348,6 +349,9 @@ function selectorMes(onChange='renderizar()') {
 }
 
 var VIEWS = {};
+window.setView = setView;
+window.DB = DB;
+window.byId = byId;
 
 // ============================================================
 // DASHBOARD
@@ -1846,6 +1850,168 @@ window.novoPreco = function() {
 };
 window.deletarPreco = async id => { if (!confirm('Excluir?')) return; await DB.remove('precos_sitio', id); setView('precos'); };
 
+// ============================================================
+// PLAQUINHAS / ETIQUETAS (impressão MAPA)
+// ============================================================
+function getCfgPlaq() {
+  let cfg = {};
+  try { cfg = JSON.parse(localStorage.getItem('estufas_cfg_plaq') || '{}'); } catch(e){}
+  return Object.assign({
+    produtor: 'José Inacio Rosa',
+    propriedade: 'Sitio São José',
+    municipio: 'Monte Azul Paulista',
+    processo: '20251257',
+    lote: '0'
+  }, cfg);
+}
+function setCfgPlaq(cfg) { localStorage.setItem('estufas_cfg_plaq', JSON.stringify(cfg)); }
+
+VIEWS.plaquinhas = function() {
+  STATE.plaqEst = STATE.plaqEst || (STATE.data.estufas[0]?.id || '');
+  STATE.plaqSel = STATE.plaqSel || {};
+  const e = byId('estufas', STATE.plaqEst);
+  const bcs = e ? STATE.data.bancadas.filter(b => b.estufa_id === e.id)
+    .sort((a,b) => a.numero.localeCompare(b.numero, undefined, {numeric:true})) : [];
+  const cfg = getCfgPlaq();
+  $('#content').innerHTML = `
+    <h2 class="text-2xl font-bold mb-1">🏷️ Plaquinhas / Etiquetas</h2>
+    <p class="text-sm text-gray-500 mb-4">Selecione estufa e bancadas para gerar etiquetas no formato MAPA (croqui de produção). Imprime 2 por linha.</p>
+
+    <div class="bg-white p-4 rounded-xl shadow mb-4">
+      <h3 class="font-bold mb-3 text-sm">Dados fixos da propriedade</h3>
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+        <div><label class="text-xs text-gray-500">Produtor</label><input id="pPdr" type="text" value="${escapeHtml(cfg.produtor)}" class="w-full mt-1 px-3 py-2 border rounded"></div>
+        <div><label class="text-xs text-gray-500">Propriedade</label><input id="pPrp" type="text" value="${escapeHtml(cfg.propriedade)}" class="w-full mt-1 px-3 py-2 border rounded"></div>
+        <div><label class="text-xs text-gray-500">Município</label><input id="pMun" type="text" value="${escapeHtml(cfg.municipio)}" class="w-full mt-1 px-3 py-2 border rounded"></div>
+        <div><label class="text-xs text-gray-500">Nº Processo</label><input id="pPrc" type="text" value="${escapeHtml(cfg.processo)}" class="w-full mt-1 px-3 py-2 border rounded"></div>
+        <div><label class="text-xs text-gray-500">Lote</label><input id="pLot" type="text" value="${escapeHtml(cfg.lote)}" class="w-full mt-1 px-3 py-2 border rounded"></div>
+        <div class="flex items-end"><button onclick="salvarCfgPlaq()" class="bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded text-sm">Salvar dados fixos</button></div>
+      </div>
+    </div>
+
+    <div class="bg-white p-4 rounded-xl shadow mb-4">
+      <div class="flex flex-wrap items-center gap-3 mb-3">
+        <div>
+          <label class="text-xs text-gray-500 block">Estufa</label>
+          <select onchange="STATE.plaqEst=this.value;STATE.plaqSel={};setView('plaquinhas')" class="px-3 py-2 border rounded text-sm">
+            ${STATE.data.estufas.map(x => '<option value="'+x.id+'"'+(x.id===STATE.plaqEst?' selected':'')+'>'+escapeHtml(x.nome)+'</option>').join('')}
+          </select>
+        </div>
+        <div class="flex-1"></div>
+        <button onclick="plaqMarcarTodas(true)" class="bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded text-sm">✓ Marcar todas</button>
+        <button onclick="plaqMarcarTodas(false)" class="bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded text-sm">✗ Desmarcar</button>
+        <button onclick="gerarPlaquinhas()" class="bg-green-700 text-white px-4 py-2 rounded text-sm">🏷️ Gerar plaquinhas</button>
+      </div>
+
+      <p class="text-xs text-gray-500 mb-2">Marque as bancadas que vão gerar etiqueta:</p>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+        ${bcs.map(b => {
+          const lotes = STATE.data.lotes.filter(l => l.bancada_id === b.id);
+          const tem = lotes.length > 0;
+          return `<label class="flex items-start gap-2 p-2 border rounded ${tem?'hover:bg-green-50':'opacity-50'} cursor-pointer ${STATE.plaqSel[b.id]?'bg-green-50 border-green-400':''}">
+            <input type="checkbox" ${tem?'':'disabled'} ${STATE.plaqSel[b.id]?'checked':''} onchange="STATE.plaqSel['${b.id}']=this.checked;setView('plaquinhas')" class="mt-1">
+            <div class="flex-1 text-sm">
+              <div class="font-mono font-bold">BC ${escapeHtml(b.numero)}</div>
+              ${lotes.map(l => '<div class="text-xs text-gray-600">'+escapeHtml(l.porta_enxerto||'-')+' / '+escapeHtml(l.variedade||'sem enxerto')+' · '+fmtNum(l.qtd)+'</div>').join('')}
+              ${!tem?'<div class="text-xs text-gray-400 italic">sem lote</div>':''}
+            </div>
+          </label>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <div id="plaqResult"></div>
+  `;
+};
+
+window.salvarCfgPlaq = function() {
+  setCfgPlaq({
+    produtor: $('#pPdr').value, propriedade: $('#pPrp').value, municipio: $('#pMun').value,
+    processo: $('#pPrc').value, lote: $('#pLot').value
+  });
+  toast('Dados salvos', 'success');
+};
+
+window.plaqMarcarTodas = function(marcar) {
+  const e = byId('estufas', STATE.plaqEst);
+  if (!e) return;
+  const bcs = STATE.data.bancadas.filter(b => b.estufa_id === e.id);
+  STATE.plaqSel = STATE.plaqSel || {};
+  for (const b of bcs) {
+    const tem = STATE.data.lotes.some(l => l.bancada_id === b.id);
+    if (tem) STATE.plaqSel[b.id] = marcar;
+  }
+  setView('plaquinhas');
+};
+
+window.gerarPlaquinhas = function() {
+  const cfg = {
+    produtor: $('#pPdr').value, propriedade: $('#pPrp').value, municipio: $('#pMun').value,
+    processo: $('#pPrc').value, lote: $('#pLot').value
+  };
+  setCfgPlaq(cfg);
+  const e = byId('estufas', STATE.plaqEst);
+  const bancadasSel = Object.keys(STATE.plaqSel).filter(id => STATE.plaqSel[id]);
+  if (bancadasSel.length === 0) { toast('Selecione ao menos 1 bancada', 'error'); return; }
+  // Para cada bancada selecionada, gera UMA etiqueta por lote
+  const etiquetas = [];
+  for (const bid of bancadasSel) {
+    const b = byId('bancadas', bid);
+    if (!b) continue;
+    const lotes = STATE.data.lotes.filter(l => l.bancada_id === bid);
+    for (const l of lotes) etiquetas.push({ estufa:e, bancada:b, lote:l });
+  }
+  if (etiquetas.length === 0) { toast('Bancadas sem lotes', 'error'); return; }
+
+  function renderEtiqueta(et) {
+    const l = et.lote;
+    // Tenta separar "Espécie / Cultivar" do porta-enxerto e variedade
+    // Conforme planilha: Citrandarin = especie, Sandiego = cultivar; Laranja = especie, Pera IAC = cultivar
+    // Aqui usamos o porta_enxerto inteiro como espécie+cultivar e variedade idem
+    return `
+      <div class="border-2 border-black p-2 text-xs" style="page-break-inside:avoid">
+        <div class="grid grid-cols-[1fr_60px] gap-1">
+          <div class="space-y-1">
+            <div><b>Produtor:</b> ${escapeHtml(cfg.produtor)}</div>
+            <div><b>Propriedade:</b> ${escapeHtml(cfg.propriedade)}</div>
+            <div class="flex gap-2"><span><b>Nº Processo:</b> ${escapeHtml(cfg.processo)}</span><span><b>Lote:</b> ${escapeHtml(cfg.lote)}</span></div>
+            <div class="flex gap-2"><span><b>Bancada:</b> ${escapeHtml(et.bancada.numero)}</span><span><b>Quantidade:</b> ${fmtNum(l.qtd)}</span></div>
+            <div class="border-t pt-1 mt-1"><b>Porta enxerto:</b> <span class="float-right text-[10px]"><b>Data plantio:</b> ${fmtDate(l.data_plantio)}</span></div>
+            <div class="pl-3"><b>Espécie:</b> ${escapeHtml((l.porta_enxerto||'').split(' ')[0] || '-')}</div>
+            <div class="pl-3"><b>Cultivar:</b> ${escapeHtml(l.porta_enxerto||'-')}</div>
+            <div class="border-t pt-1 mt-1"><b>Enxertia:</b> <span class="float-right text-[10px]"><b>Data enxertia:</b> ${fmtDate(l.data_enxerto)}</span></div>
+            <div class="pl-3"><b>Espécie:</b> ${escapeHtml(l.variedade ? 'Laranja' : '—')}</div>
+            <div class="pl-3"><b>Cultivar:</b> ${escapeHtml(l.variedade || 'sem enxerto')}</div>
+          </div>
+          <div class="flex flex-col items-center justify-center bg-gray-100 border border-gray-400 rounded p-1">
+            <div class="text-[8px] font-bold">ESTUFA</div>
+            <div class="text-[8px]">N°</div>
+            <div class="text-3xl font-black">${escapeHtml(et.estufa.nome.replace(/[^0-9]/g,'') || '?')}</div>
+            <div class="text-[8px] mt-1">BC</div>
+            <div class="text-xl font-bold">${escapeHtml(et.bancada.numero)}</div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  $('#plaqResult').innerHTML = `
+    <div class="mb-3 no-print flex items-center justify-between bg-blue-50 border border-blue-200 p-3 rounded">
+      <span class="text-sm"><b>${etiquetas.length}</b> etiquetas geradas. Confira e clique em imprimir.</span>
+      <button onclick="window.print()" class="bg-green-700 text-white px-4 py-2 rounded text-sm">🖨️ Imprimir</button>
+    </div>
+    <div class="bg-white p-4 rounded-xl shadow print-area">
+      <div class="text-center mb-3 print-area">
+        <h3 class="font-bold">PLANO DE PRODUÇÃO — ${escapeHtml(cfg.propriedade)}</h3>
+        <p class="text-xs text-gray-600">${escapeHtml(cfg.municipio)} · Nº Processo ${escapeHtml(cfg.processo)} · Estufa ${escapeHtml(et?.estufa?.nome || e.nome)}</p>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        ${etiquetas.map(renderEtiqueta).join('')}
+      </div>
+    </div>
+  `;
+  window.scrollTo({ top: $('#plaqResult').offsetTop, behavior: 'smooth' });
+};
+
 VIEWS.importar = function() {
   $('#content').innerHTML = `
     <h2 class="text-2xl font-bold mb-4">📤 Importar Excel</h2>
@@ -2010,6 +2176,10 @@ $('#cfgClear').addEventListener('click', () => {
 });
 
 $$('.nav-btn').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
+$('#menuBtn').addEventListener('click', () => $('#sidebar').classList.toggle('hidden'));
+
+})();
+etView(b.dataset.view)));
 $('#menuBtn').addEventListener('click', () => $('#sidebar').classList.toggle('hidden'));
 
 })();
