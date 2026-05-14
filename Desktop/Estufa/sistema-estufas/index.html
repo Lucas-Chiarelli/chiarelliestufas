@@ -10,16 +10,19 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="demo_data.js?v=19"></script>
+<script src="demo_data.js?v=20"></script>
 <style>
   body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; }
   .nav-btn.active { background:#15803d; color:white; }
   .badge { display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:600; }
   @media print {
     .no-print { display: none !important; }
-    body { background: white !important; }
-    .print-area { box-shadow: none !important; padding: 0 !important; }
+    body { background: white !important; margin: 0 !important; }
+    header, aside, nav { display: none !important; }
+    main { padding: 0 !important; }
+    .print-area { box-shadow: none !important; padding: 0 !important; margin: 0 !important; border: none !important; }
     table { font-size: 11px; }
+    @page { margin: 10mm; }
   }
 </style>
 </head>
@@ -136,6 +139,6 @@
 <!-- Toast -->
 <div id="toast" class="hidden fixed bottom-4 right-4 bg-gray-900 text-white px-4 py-2 rounded shadow-lg z-50"></div>
 
-<script src="app.js?v=19"></script>
+<script src="app.js?v=20"></script>
 </body>
 </html>

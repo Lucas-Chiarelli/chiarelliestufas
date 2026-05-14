@@ -1874,10 +1874,10 @@ VIEWS.plaquinhas = function() {
     .sort((a,b) => a.numero.localeCompare(b.numero, undefined, {numeric:true})) : [];
   const cfg = getCfgPlaq();
   $('#content').innerHTML = `
-    <h2 class="text-2xl font-bold mb-1">🏷️ Plaquinhas / Etiquetas</h2>
-    <p class="text-sm text-gray-500 mb-4">Selecione estufa e bancadas para gerar etiquetas no formato MAPA (croqui de produção). Imprime 2 por linha.</p>
+    <h2 class="text-2xl font-bold mb-1 no-print">🏷️ Plaquinhas / Etiquetas</h2>
+    <p class="text-sm text-gray-500 mb-4 no-print">Selecione estufa e bancadas para gerar etiquetas no formato MAPA (croqui de produção). Imprime 2 por linha.</p>
 
-    <div class="bg-white p-4 rounded-xl shadow mb-4">
+    <div class="bg-white p-4 rounded-xl shadow mb-4 no-print">
       <h3 class="font-bold mb-3 text-sm">Dados fixos da propriedade</h3>
       <div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
         <div><label class="text-xs text-gray-500">Produtor</label><input id="pPdr" type="text" value="${escapeHtml(cfg.produtor)}" class="w-full mt-1 px-3 py-2 border rounded"></div>
@@ -1889,7 +1889,7 @@ VIEWS.plaquinhas = function() {
       </div>
     </div>
 
-    <div class="bg-white p-4 rounded-xl shadow mb-4">
+    <div class="bg-white p-4 rounded-xl shadow mb-4 no-print">
       <div class="flex flex-wrap items-center gap-3 mb-3">
         <div>
           <label class="text-xs text-gray-500 block">Estufa</label>
@@ -2177,5 +2177,8 @@ $('#cfgClear').addEventListener('click', () => {
 
 $$('.nav-btn').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
 $('#menuBtn').addEventListener('click', () => $('#sidebar').classList.toggle('hidden'));
+
+})();
+classList.toggle('hidden'));
 
 })();
