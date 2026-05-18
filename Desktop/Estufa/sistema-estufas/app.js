@@ -743,6 +743,11 @@ function formLote(lote) {
           <input id="lEnxerto" type="date" value="${lote.data_enxerto||''}" class="w-full mt-1 px-3 py-2 border rounded">
         </div>
       </div>
+      <div>
+        <label class="text-sm font-medium">Nº Processo da bancada</label>
+        <input id="lProcesso" type="text" placeholder="ex: 20251257 (em branco usa o padrão da estufa)" value="${escapeHtml(lote.bancada_id ? (byId('bancadas', lote.bancada_id)?.processo || '') : '')}" class="w-full mt-1 px-3 py-2 border rounded">
+        <p class="text-xs text-gray-500 mt-1">Esse número aparece nas plaquinhas. Se ficar em branco, usa o padrão da configuração de plaquinhas.</p>
+      </div>
       <div class="flex justify-end gap-2 pt-3">
         <button type="button" onclick="closeModal()" class="px-4 py-2 border rounded">Cancelar</button>
         <button type="submit" class="px-4 py-2 bg-green-700 text-white rounded">Salvar</button>
@@ -1903,17 +1908,19 @@ VIEWS.plaquinhas = function() {
         <button onclick="gerarPlaquinhas()" class="bg-green-700 text-white px-4 py-2 rounded text-sm">🏷️ Gerar plaquinhas</button>
       </div>
 
-      <p class="text-xs text-gray-500 mb-2">Marque as bancadas que vão gerar etiqueta:</p>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+      <p class="text-xs text-gray-500 mb-2">Marque as bancadas que vão gerar etiqueta. Cada uma pode ter seu próprio Nº de Processo (deixe em branco para usar o padrão da estufa):</p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
         ${bcs.map(b => {
           const lotes = STATE.data.lotes.filter(l => l.bancada_id === b.id);
           const tem = lotes.length > 0;
-          return `<label class="flex items-start gap-2 p-2 border rounded ${tem?'hover:bg-green-50':'opacity-50'} cursor-pointer ${STATE.plaqSel[b.id]?'bg-green-50 border-green-400':''}">
-            <input type="checkbox" ${tem?'':'disabled'} ${STATE.plaqSel[b.id]?'checked':''} onchange="STATE.plaqSel['${b.id}']=this.checked;setView('plaquinhas')" class="mt-1">
+          const procAtual = STATE.plaqProc?.[b.id] ?? (b.processo || '');
+          return `<label class="flex items-start gap-2 p-2 border rounded ${tem?'hover:bg-green-50':'opacity-50'} ${STATE.plaqSel[b.id]?'bg-green-50 border-green-400':''}">
+            <input type="checkbox" ${tem?'':'disabled'} ${STATE.plaqSel[b.id]?'checked':''} onchange="STATE.plaqSel['${b.id}']=this.checked;setView('plaquinhas')" class="mt-1 cursor-pointer">
             <div class="flex-1 text-sm">
               <div class="font-mono font-bold">BC ${escapeHtml(b.numero)}</div>
               ${lotes.map(l => '<div class="text-xs text-gray-600">'+escapeHtml(l.porta_enxerto||'-')+' / '+escapeHtml(l.variedade||'sem enxerto')+' · '+fmtNum(l.qtd)+'</div>').join('')}
               ${!tem?'<div class="text-xs text-gray-400 italic">sem lote</div>':''}
+              ${tem ? `<div class="mt-1 flex items-center gap-1"><span class="text-xs text-gray-500">Nº Proc.:</span><input type="text" value="${escapeHtml(procAtual)}" placeholder="${escapeHtml(cfg.processo)}" onchange="salvarProcBancada('${b.id}', this.value)" class="flex-1 px-1 py-0.5 text-xs border rounded font-mono" onclick="event.preventDefault();event.stopPropagation()"></div>` : ''}
             </div>
           </label>`;
         }).join('')}
@@ -1922,6 +1929,14 @@ VIEWS.plaquinhas = function() {
 
     <div id="plaqResult"></div>
   `;
+};
+
+window.salvarProcBancada = async function(bancadaId, valor) {
+  STATE.plaqProc = STATE.plaqProc || {};
+  STATE.plaqProc[bancadaId] = valor;
+  // Persiste no banco também (assim fica salvo entre sessões)
+  try { await DB.update('bancadas', bancadaId, { processo: valor || null }); } catch(e) { console.error(e); }
+  toast('Nº Processo da bancada salvo', 'success');
 };
 
 window.salvarCfgPlaq = function() {
@@ -1965,16 +1980,15 @@ window.gerarPlaquinhas = function() {
 
   function renderEtiqueta(et) {
     const l = et.lote;
-    // Tenta separar "Espécie / Cultivar" do porta-enxerto e variedade
-    // Conforme planilha: Citrandarin = especie, Sandiego = cultivar; Laranja = especie, Pera IAC = cultivar
-    // Aqui usamos o porta_enxerto inteiro como espécie+cultivar e variedade idem
+    // Cada bancada pode ter seu próprio Nº Processo (override do padrão)
+    const procBancada = (STATE.plaqProc?.[et.bancada.id]) || et.bancada.processo || cfg.processo;
     return `
       <div class="border-2 border-black p-2 text-xs" style="page-break-inside:avoid">
         <div class="grid grid-cols-[1fr_60px] gap-1">
           <div class="space-y-1">
             <div><b>Produtor:</b> ${escapeHtml(cfg.produtor)}</div>
             <div><b>Propriedade:</b> ${escapeHtml(cfg.propriedade)}</div>
-            <div class="flex gap-2"><span><b>Nº Processo:</b> ${escapeHtml(cfg.processo)}</span><span><b>Lote:</b> ${escapeHtml(cfg.lote)}</span></div>
+            <div class="flex gap-2"><span><b>Nº Processo:</b> ${escapeHtml(procBancada)}</span><span><b>Lote:</b> ${escapeHtml(cfg.lote)}</span></div>
             <div class="flex gap-2"><span><b>Bancada:</b> ${escapeHtml(et.bancada.numero)}</span><span><b>Quantidade:</b> ${fmtNum(l.qtd)}</span></div>
             <div class="border-t pt-1 mt-1"><b>Porta enxerto:</b> <span class="float-right text-[10px]"><b>Data plantio:</b> ${fmtDate(l.data_plantio)}</span></div>
             <div class="pl-3"><b>Espécie:</b> ${escapeHtml((l.porta_enxerto||'').split(' ')[0] || '-')}</div>
@@ -2159,6 +2173,27 @@ $('#cfgBtn').addEventListener('click', () => {
 });
 
 $('#cfgSave').addEventListener('click', () => {
+  const url = $('#cfgUrl').value.trim(), key = $('#cfgKey').value.trim();
+  if (!url || !key) { toast('Preencha URL e key', 'error'); return; }
+  if (typeof supabase === 'undefined') { toast('Supabase não carregou', 'error'); return; }
+  localStorage.setItem('estufas_supabase_cfg', JSON.stringify({ url, key }));
+  STATE.supa = supabase.createClient(url, key);
+  STATE.mode = 'supabase';
+  toast('Conectado. Faça login.', 'success');
+  showLogin();
+});
+
+$('#cfgClear').addEventListener('click', () => {
+  localStorage.removeItem('estufas_supabase_cfg');
+  STATE.mode = 'demo'; STATE.supa = null;
+  showLogin();
+});
+
+$$('.nav-btn').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
+$('#menuBtn').addEventListener('click', () => $('#sidebar').classList.toggle('hidden'));
+
+})();
+fgSave').addEventListener('click', () => {
   const url = $('#cfgUrl').value.trim(), key = $('#cfgKey').value.trim();
   if (!url || !key) { toast('Preencha URL e key', 'error'); return; }
   if (typeof supabase === 'undefined') { toast('Supabase não carregou', 'error'); return; }
