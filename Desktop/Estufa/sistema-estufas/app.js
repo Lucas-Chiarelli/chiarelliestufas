@@ -2193,24 +2193,3 @@ $$('.nav-btn').forEach(b => b.addEventListener('click', () => setView(b.dataset.
 $('#menuBtn').addEventListener('click', () => $('#sidebar').classList.toggle('hidden'));
 
 })();
-fgSave').addEventListener('click', () => {
-  const url = $('#cfgUrl').value.trim(), key = $('#cfgKey').value.trim();
-  if (!url || !key) { toast('Preencha URL e key', 'error'); return; }
-  if (typeof supabase === 'undefined') { toast('Supabase não carregou', 'error'); return; }
-  localStorage.setItem('estufas_supabase_cfg', JSON.stringify({ url, key }));
-  STATE.supa = supabase.createClient(url, key);
-  STATE.mode = 'supabase';
-  toast('Conectado. Faça login.', 'success');
-  showLogin();
-});
-
-$('#cfgClear').addEventListener('click', () => {
-  localStorage.removeItem('estufas_supabase_cfg');
-  STATE.mode = 'demo'; STATE.supa = null;
-  showLogin();
-});
-
-$$('.nav-btn').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
-$('#menuBtn').addEventListener('click', () => $('#sidebar').classList.toggle('hidden'));
-
-})();
