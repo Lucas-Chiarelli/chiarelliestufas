@@ -2173,12 +2173,8 @@ $('#cfgClear').addEventListener('click', () => {
   localStorage.removeItem('estufas_supabase_cfg');
   STATE.mode = 'demo'; STATE.supa = null;
   showLogin();
-});
 
 $$('.nav-btn').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
 $('#menuBtn').addEventListener('click', () => $('#sidebar').classList.toggle('hidden'));
-
-})();
-classList.toggle('hidden'));
 
 })();
