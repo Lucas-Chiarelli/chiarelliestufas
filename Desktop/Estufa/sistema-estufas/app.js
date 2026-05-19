@@ -1,5 +1,5 @@
 // ============================================================
-// SISTEMA DE GESTAO DE ESTUFAS
+// SISTEMA DE GESTAO Chiarelli DE ESTUFAS
 // ============================================================
 (function(){
 if (window.__ESTUFAS_LOADED__) { console.warn('app.js carregado 2x'); return; }
@@ -764,8 +764,14 @@ function formLote(lote) {
     e.preventDefault();
     const estufaId = $('#lEstufa').value;
     const bancadaNum = $('#lBancada').value.trim();
+    const processoNum = $('#lProcesso')?.value.trim() || null;
     let bancada = STATE.data.bancadas.find(b => b.estufa_id === estufaId && b.numero === bancadaNum);
-    if (!bancada) bancada = await DB.insert('bancadas', { estufa_id: estufaId, numero: bancadaNum, funcionario_id: $('#lFunc').value || null });
+    if (!bancada) {
+      bancada = await DB.insert('bancadas', { estufa_id: estufaId, numero: bancadaNum, funcionario_id: $('#lFunc').value || null, processo: processoNum });
+    } else {
+      // Atualiza o processo da bancada existente
+      await DB.update('bancadas', bancada.id, { processo: processoNum });
+    }
     const payload = {
       bancada_id: bancada.id,
       funcionario_id: $('#lFunc').value || null,
@@ -2174,6 +2180,26 @@ $('#cfgBtn').addEventListener('click', () => {
 
 $('#cfgSave').addEventListener('click', () => {
   const url = $('#cfgUrl').value.trim(), key = $('#cfgKey').value.trim();
+  if (!url || !key) { toast('Preencha URL e key', 'error'); return; }
+  if (typeof supabase === 'undefined') { toast('Supabase não carregou', 'error'); return; }
+  localStorage.setItem('estufas_supabase_cfg', JSON.stringify({ url, key }));
+  STATE.supa = supabase.createClient(url, key);
+  STATE.mode = 'supabase';
+  toast('Conectado. Faça login.', 'success');
+  showLogin();
+});
+
+$('#cfgClear').addEventListener('click', () => {
+  localStorage.removeItem('estufas_supabase_cfg');
+  STATE.mode = 'demo'; STATE.supa = null;
+  showLogin();
+});
+
+$$('.nav-btn').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
+$('#menuBtn').addEventListener('click', () => $('#sidebar').classList.toggle('hidden'));
+
+})();
+Key').value.trim();
   if (!url || !key) { toast('Preencha URL e key', 'error'); return; }
   if (typeof supabase === 'undefined') { toast('Supabase não carregou', 'error'); return; }
   localStorage.setItem('estufas_supabase_cfg', JSON.stringify({ url, key }));
