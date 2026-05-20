@@ -1493,33 +1493,76 @@ function renderConsulta() {
 // ESTOQUE / VENDAS / ALERTAS / ESTUFAS / FUNCIONARIOS / PRECOS
 // ============================================================
 VIEWS.estoque = function() {
+  const today = new Date();
   const lotes = STATE.data.lotes.map(l => {
     const b = byId('bancadas', l.bancada_id);
     const e = b ? byId('estufas', b.estufa_id) : null;
     const saidas = STATE.data.estoque_movimentos.filter(m => m.lote_id === l.id && m.tipo !== 'entrada').reduce((s,m)=>s+m.qtd,0);
-    return { l, b, e, disponivel: l.qtd - saidas };
-  }).filter(x => x.disponivel > 0).sort((a,b) => (a.e?.nome||'').localeCompare(b.e?.nome||''));
+    const idade = idadeMeses(l.data_plantio, today);
+    return { l, b, e, saidas, disponivel: l.qtd - saidas, idade };
+  }).sort((a,b) => (a.e?.nome||'').localeCompare(b.e?.nome||'') || (a.b?.numero||'').localeCompare(b.b?.numero||'', undefined, {numeric:true}));
   const totalDisp = lotes.reduce((s,x)=>s+x.disponivel,0);
+  const totalInicial = lotes.reduce((s,x)=>s+x.l.qtd,0);
+  const totalVendido = lotes.reduce((s,x)=>s+x.saidas,0);
+  const lotesVencidosComEstoque = lotes.filter(x => x.idade > 13 && x.disponivel > 0).length;
+
   $('#content').innerHTML = `
-    <h2 class="text-2xl font-bold mb-4">📦 Estoque atual</h2>
-    <div class="bg-white p-4 rounded-xl shadow mb-4"><div class="text-sm text-gray-500">Total disponível</div><div class="text-3xl font-bold text-green-700">${fmtNum(totalDisp)} mudas</div></div>
-    <div class="bg-white rounded-xl shadow overflow-x-auto"><table class="w-full text-sm">
-      <thead class="bg-gray-50"><tr class="text-left">
-        <th class="p-2">Estufa</th><th>BC</th><th>Porta-enxerto</th><th>Variedade</th>
-        <th class="text-right">Inicial</th><th class="text-right">Disponível</th><th>Plantio</th>
-        ${isAdmin()?'<th></th>':''}
-      </tr></thead>
-      <tbody>${lotes.map(({l,b,e,disponivel}) => `<tr class="border-t hover:bg-gray-50">
-        <td class="p-2">${escapeHtml(e?.nome||'?')}</td>
-        <td>${escapeHtml(b?.numero||'?')}</td>
-        <td>${escapeHtml(l.porta_enxerto||'-')}</td>
-        <td>${escapeHtml(l.variedade||'-')}</td>
-        <td class="text-right">${fmtNum(l.qtd)}</td>
-        <td class="text-right font-bold">${fmtNum(disponivel)}</td>
-        <td>${fmtDate(l.data_plantio)}</td>
-        ${isAdmin()?`<td><button onclick="novaSaida('${l.id}')" class="text-blue-700 text-xs hover:underline">saída</button></td>`:''}
-      </tr>`).join('')}</tbody>
-    </table></div>
+    <h2 class="text-2xl font-bold mb-1">📦 Estoque & Vendas</h2>
+    <p class="text-sm text-gray-500 mb-4">Controle real de mudas vs status de pagamento ao funcionário</p>
+
+    <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4 text-sm">
+      <p class="font-bold text-blue-900 mb-1">ℹ️ Como funciona:</p>
+      <ul class="text-blue-800 text-xs space-y-1 list-disc list-inside">
+        <li><b>Pagamento ao funcionário</b> = 12 meses sobre a quantidade <b>plantada</b> (NÃO afetado por vendas/saídas)</li>
+        <li><b>Estoque atual</b> = quantidade plantada − vendida (independente do pagamento)</li>
+        <li>Se vender em 8m, 9m... funcionário continua recebendo até o mês 13</li>
+        <li>Após 13 meses: pagamento PARA, mas estoque continua sendo controlado até zerar</li>
+      </ul>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+      <div class="bg-white p-4 rounded-xl shadow"><div class="text-xs text-gray-500 uppercase">Total plantado</div><div class="text-2xl font-bold text-gray-700">${fmtNum(totalInicial)}</div></div>
+      <div class="bg-white p-4 rounded-xl shadow"><div class="text-xs text-gray-500 uppercase">Vendido / saída</div><div class="text-2xl font-bold text-blue-700">${fmtNum(totalVendido)}</div></div>
+      <div class="bg-white p-4 rounded-xl shadow"><div class="text-xs text-gray-500 uppercase">Disponível agora</div><div class="text-2xl font-bold text-green-700">${fmtNum(totalDisp)}</div></div>
+      <div class="bg-white p-4 rounded-xl shadow"><div class="text-xs text-gray-500 uppercase">Vencidos c/ estoque</div><div class="text-2xl font-bold text-red-700">${lotesVencidosComEstoque}</div><div class="text-xs text-gray-400">já sem pagamento</div></div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow overflow-x-auto">
+      <div class="p-3 border-b flex justify-between items-center">
+        <h3 class="font-bold">Estoque por bancada</h3>
+        ${isAdmin()?'<button onclick="novaSaida()" class="bg-green-700 text-white px-3 py-1.5 rounded text-sm">+ Registrar venda/saída</button>':''}
+      </div>
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 text-xs uppercase text-gray-600">
+          <tr class="text-left">
+            <th class="p-2">Estufa</th><th>BC</th><th>Porta-enxerto</th><th>Variedade</th>
+            <th class="text-right">Plantado</th><th class="text-right">Vendido</th><th class="text-right">Disponível</th>
+            <th class="text-center">Idade</th>
+            <th class="text-center">Status pagamento</th>
+            ${isAdmin()?'<th class="text-center">Ação</th>':''}
+          </tr>
+        </thead>
+        <tbody>${lotes.filter(x => x.disponivel > 0 || x.saidas > 0).map(({l,b,e,saidas,disponivel,idade}) => {
+          let statusPag, corStatus;
+          if (idade < 1) { statusPag = 'aguardando início'; corStatus = 'bg-gray-100 text-gray-600'; }
+          else if (idade <= 12) { statusPag = 'pagando (mês ' + idade + '/12)'; corStatus = 'bg-green-100 text-green-800'; }
+          else if (idade === 13) { statusPag = 'retenção (mês 13)'; corStatus = 'bg-orange-100 text-orange-800'; }
+          else { statusPag = 'parou (' + idade + 'm)'; corStatus = 'bg-red-100 text-red-800'; }
+          return '<tr class="border-t hover:bg-gray-50 ' + (disponivel===0?'opacity-60':'') + '">' +
+            '<td class="p-2">' + escapeHtml(e?.nome||'?') + '</td>' +
+            '<td class="font-mono">' + escapeHtml(b?.numero||'?') + '</td>' +
+            '<td>' + escapeHtml(l.porta_enxerto||'-') + '</td>' +
+            '<td>' + escapeHtml(l.variedade||'-') + '</td>' +
+            '<td class="text-right">' + fmtNum(l.qtd) + '</td>' +
+            '<td class="text-right text-blue-700">' + (saidas>0?fmtNum(saidas):'-') + '</td>' +
+            '<td class="text-right font-bold ' + (disponivel===0?'text-gray-400':'text-green-700') + '">' + fmtNum(disponivel) + '</td>' +
+            '<td class="text-center text-xs">' + idade + 'm</td>' +
+            '<td class="text-center"><span class="badge ' + corStatus + '">' + statusPag + '</span></td>' +
+            (isAdmin() ? '<td class="text-center">' + (disponivel>0?('<button onclick="novaSaida(' + JSON.stringify(l.id) + ')" class="bg-blue-600 hover:bg-blue-700 text-white text-xs px-2 py-1 rounded">📤 Vender</button>'):'<span class="text-xs text-gray-400">esgotado</span>') + '</td>' : '') +
+            '</tr>';
+        }).join('')}</tbody>
+      </table>
+    </div>
   `;
 };
 
@@ -2111,6 +2154,89 @@ VIEWS.importar = function() {
         let f = STATE.data.funcionarios.find(x => x.nome.toLowerCase() === nomeFunc.toLowerCase());
         if (!f) f = await DB.insert('funcionarios', { nome:nomeFunc, tipo:'por_muda', salario_fixo:null });
         funcId = f.id;
+      }
+      let banc = STATE.data.bancadas.find(b => b.estufa_id === estufaId && b.numero === bc);
+      if (!banc) banc = await DB.insert('bancadas', { estufa_id:estufaId, numero:bc, funcionario_id:funcId });
+      await DB.insert('lotes', { bancada_id:banc.id, funcionario_id:funcId, qtd, porta_enxerto: String(r[map.porta]||'').trim() || null, variedade: String(r[map.var]||'').trim() || null, tipo:'muda_normal', data_plantio:plantio.slice(0,10), data_enxerto:null });
+      ok++;
+    }
+    $('#impResult').innerHTML = '<div class="bg-green-50 p-3 rounded text-sm"><b>'+ok+'</b> importados, <b>'+skip+'</b> ignorados.</div>';
+    toast('Importação OK', 'success');
+  }
+};
+
+// ============================================================
+// BOOTSTRAP
+// ============================================================
+window.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const ok = await tryLoadConfig();
+    if (ok) await enterApp(); else showLogin();
+  } catch (e) {
+    console.error('Bootstrap:', e);
+    try { showLogin(); } catch(e2) {
+      document.body.innerHTML = '<div style="padding:20px"><h2>Erro ao iniciar</h2><pre style="background:#fee;padding:10px;color:#900;font-size:12px">'+(e.stack||e.message)+'</pre></div>';
+    }
+  }
+});
+
+$('#loginForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  $('#loginErr').classList.add('hidden');
+  try { await doLogin($('#loginEmail').value, $('#loginPass').value); enterApp(); }
+  catch (err) { $('#loginErr').textContent = err.message; $('#loginErr').classList.remove('hidden'); }
+});
+
+$('#signupBtn').addEventListener('click', async () => {
+  $('#loginErr').classList.add('hidden');
+  try {
+    if (!$('#loginEmail').value || $('#loginPass').value.length < 6) throw new Error('Email + senha (mín 6 chars)');
+    await doSignup($('#loginEmail').value, $('#loginPass').value);
+  } catch (err) { $('#loginErr').textContent = err.message; $('#loginErr').classList.remove('hidden'); }
+});
+
+$('#logoutBtn').addEventListener('click', doLogout);
+
+$('#resetBtn').addEventListener('click', async () => {
+  if (!confirm('Recarregar TODOS os dados da planilha?')) return;
+  for (const k of Object.keys(localStorage)) {
+    if (k.startsWith('estufas_demo_v')) localStorage.removeItem(k);
+  }
+  toast('Recarregando...', 'success');
+  setTimeout(() => location.reload(), 600);
+});
+
+$('#cfgBtn').addEventListener('click', () => {
+  $('#loginScreen').classList.add('hidden');
+  $('#cfgScreen').classList.remove('hidden');
+  let cfg = {};
+  try { cfg = JSON.parse(localStorage.getItem('estufas_supabase_cfg') || '{}'); } catch(e) {}
+  $('#cfgUrl').value = cfg.url || '';
+  $('#cfgKey').value = cfg.key || '';
+});
+
+$('#cfgSave').addEventListener('click', () => {
+  const url = $('#cfgUrl').value.trim(), key = $('#cfgKey').value.trim();
+  if (!url || !key) { toast('Preencha URL e key', 'error'); return; }
+  if (typeof supabase === 'undefined') { toast('Supabase não carregou', 'error'); return; }
+  localStorage.setItem('estufas_supabase_cfg', JSON.stringify({ url, key }));
+  STATE.supa = supabase.createClient(url, key);
+  STATE.mode = 'supabase';
+  toast('Conectado. Faça login.', 'success');
+  showLogin();
+});
+
+$('#cfgClear').addEventListener('click', () => {
+  localStorage.removeItem('estufas_supabase_cfg');
+  STATE.mode = 'demo'; STATE.supa = null;
+  showLogin();
+});
+
+$$('.nav-btn').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
+$('#menuBtn').addEventListener('click', () => $('#sidebar').classList.toggle('hidden'));
+
+})();
+f.id;
       }
       let banc = STATE.data.bancadas.find(b => b.estufa_id === estufaId && b.numero === bc);
       if (!banc) banc = await DB.insert('bancadas', { estufa_id:estufaId, numero:bc, funcionario_id:funcId });
