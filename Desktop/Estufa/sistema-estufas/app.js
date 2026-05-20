@@ -334,11 +334,7 @@ function setView(view) {
   STATE.view = view;
   $$('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
   const fn = VIEWS[view];
-  if (fn) {
-    try { fn(); } catch(e) { console.error('Erro na view', view, e); }
-  } else {
-    console.error('View não encontrada:', view);
-  }
+  if (fn) fn();
 }
 
 function getRefMes() {
@@ -384,29 +380,29 @@ VIEWS.dashboard = function() {
     if (e) porSitio[e.sitio] = (porSitio[e.sitio]||0) + l.qtd;
   }
 
-  $('#content').innerHTML = \`
+  $('#content').innerHTML = `
     <div class="flex flex-wrap items-baseline justify-between mb-1">
       <h2 class="text-2xl font-bold">Dashboard</h2>
-      <p class="text-sm text-gray-500">\${today.toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'long', year:'numeric'})}</p>
+      <p class="text-sm text-gray-500">${today.toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'long', year:'numeric'})}</p>
     </div>
-    <p class="text-sm text-gray-500 mb-4">Visão geral · \${nomesMes(mes)}/\${ano}</p>
+    <p class="text-sm text-gray-500 mb-4">Visão geral · ${nomesMes(mes)}/${ano}</p>
 
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-      <div class="bg-white p-4 rounded-xl shadow"><div class="text-xs text-gray-500 uppercase">Porta-enxertos</div><div class="text-2xl font-bold text-green-700">\${fmtNum(totalMudas)}</div><div class="text-xs text-gray-400 mt-1">em \${totalLotes} lotes</div></div>
-      <div class="bg-white p-4 rounded-xl shadow"><div class="text-xs text-gray-500 uppercase">Enxertos</div><div class="text-2xl font-bold text-emerald-700">\${fmtNum(totalEnxertos)}</div></div>
-      <div class="bg-white p-4 rounded-xl shadow"><div class="text-xs text-gray-500 uppercase">A pagar este mês</div><div class="text-2xl font-bold text-blue-700">\${fmtMoneyExato(pagTotal)}</div><div class="text-xs text-gray-400 mt-1">\${fmtMoneyExato(pagMuda)} muda + \${fmtMoneyExato(pagFix)} fixo</div></div>
-      <div class="bg-white p-4 rounded-xl shadow cursor-pointer hover:bg-red-50" onclick="setView('vencidos')"><div class="text-xs text-gray-500 uppercase">Bancadas vencidas</div><div class="text-2xl font-bold text-red-700">\${venc.length}</div><div class="text-xs text-gray-400 mt-1">\${fmtNum(totMudasVenc)} mudas (>13m)</div></div>
+      <div class="bg-white p-4 rounded-xl shadow"><div class="text-xs text-gray-500 uppercase">Porta-enxertos</div><div class="text-2xl font-bold text-green-700">${fmtNum(totalMudas)}</div><div class="text-xs text-gray-400 mt-1">em ${totalLotes} lotes</div></div>
+      <div class="bg-white p-4 rounded-xl shadow"><div class="text-xs text-gray-500 uppercase">Enxertos</div><div class="text-2xl font-bold text-emerald-700">${fmtNum(totalEnxertos)}</div></div>
+      <div class="bg-white p-4 rounded-xl shadow"><div class="text-xs text-gray-500 uppercase">A pagar este mês</div><div class="text-2xl font-bold text-blue-700">${fmtMoneyExato(pagTotal)}</div><div class="text-xs text-gray-400 mt-1">${fmtMoneyExato(pagMuda)} muda + ${fmtMoneyExato(pagFix)} fixo</div></div>
+      <div class="bg-white p-4 rounded-xl shadow cursor-pointer hover:bg-red-50" onclick="setView('vencidos')"><div class="text-xs text-gray-500 uppercase">Bancadas vencidas</div><div class="text-2xl font-bold text-red-700">${venc.length}</div><div class="text-xs text-gray-400 mt-1">${fmtNum(totMudasVenc)} mudas (>13m)</div></div>
     </div>
 
     <div class="grid grid-cols-2 md:grid-cols-2 gap-3 mb-4">
       <div class="bg-white p-4 rounded-xl shadow cursor-pointer hover:bg-blue-50" onclick="setView('vazias')">
         <div class="text-xs text-gray-500 uppercase">📭 Bancadas vazias</div>
-        <div class="text-2xl font-bold text-blue-700">\${bancadasVazias().length}</div>
+        <div class="text-2xl font-bold text-blue-700">${bancadasVazias().length}</div>
         <div class="text-xs text-gray-400 mt-1">precisam de plantio — clique para ver</div>
       </div>
       <div class="bg-white p-4 rounded-xl shadow">
         <div class="text-xs text-gray-500 uppercase">⏰ Alertas exame</div>
-        <div class="text-2xl font-bold text-orange-700">\${alertasAtivos.length}</div>
+        <div class="text-2xl font-bold text-orange-700">${alertasAtivos.length}</div>
         <div class="text-xs text-gray-400 mt-1">lotes com >50d do enxerto</div>
       </div>
     </div>
@@ -414,26 +410,26 @@ VIEWS.dashboard = function() {
     <div class="grid md:grid-cols-3 gap-4 mb-4">
       <div class="bg-white p-4 rounded-xl shadow md:col-span-2">
         <h3 class="font-bold mb-2">Por sítio</h3>
-        \${Object.entries(porSitio).map(([s,q]) => {
+        ${Object.entries(porSitio).map(([s,q]) => {
           const max = Math.max(...Object.values(porSitio), 1);
-          return \`<div class="mb-2"><div class="flex justify-between text-sm mb-1"><span>\${SITIO_LABEL[s]||s}</span><span class="font-bold">\${fmtNum(q)} mudas</span></div><div class="bg-gray-100 rounded h-2"><div class="bg-green-600 h-full rounded" style="width:\${(q/max*100).toFixed(1)}%"></div></div></div>\`;
+          return `<div class="mb-2"><div class="flex justify-between text-sm mb-1"><span>${SITIO_LABEL[s]||s}</span><span class="font-bold">${fmtNum(q)} mudas</span></div><div class="bg-gray-100 rounded h-2"><div class="bg-green-600 h-full rounded" style="width:${(q/max*100).toFixed(1)}%"></div></div></div>`;
         }).join('')}
       </div>
       <div class="bg-white p-4 rounded-xl shadow">
         <h3 class="font-bold mb-2">⏰ Alertas de exame</h3>
-        \${alertasAtivos.length === 0
+        ${alertasAtivos.length === 0
           ? '<p class="text-sm text-gray-500">Nenhum lote pendente.</p>'
           : '<div class="space-y-1 text-sm">' + alertasAtivos.slice(0,5).map(a => {
               const b = byId('bancadas', a.bancada_id);
               const e = b ? byId('estufas', b.estufa_id) : null;
-              return \`<div class="flex justify-between border-b py-1"><span><b>\${e?.nome||'?'}</b> · BC \${b?.numero||'?'}</span><span class="text-orange-700 font-bold">\${a.diasDesdeEnxerto}d</span></div>\`;
+              return `<div class="flex justify-between border-b py-1"><span><b>${e?.nome||'?'}</b> · BC ${b?.numero||'?'}</span><span class="text-orange-700 font-bold">${a.diasDesdeEnxerto}d</span></div>`;
             }).join('') + '</div>'}
       </div>
     </div>
 
     <div class="bg-white p-4 rounded-xl shadow">
       <div class="flex items-baseline justify-between mb-2">
-        <h3 class="font-bold">💰 Pagamentos — \${nomesMes(mes)}/\${ano}</h3>
+        <h3 class="font-bold">💰 Pagamentos — ${nomesMes(mes)}/${ano}</h3>
         <button onclick="setView('pag_resumo')" class="text-sm text-blue-700 hover:underline">Ver detalhes →</button>
       </div>
       <table class="w-full text-sm">
@@ -442,28 +438,28 @@ VIEWS.dashboard = function() {
           <th class="text-right">Total</th><th class="text-right no-print">Ações</th>
         </tr></thead>
         <tbody>
-          \${STATE.data.funcionarios
+          ${STATE.data.funcionarios
             .map(f => ({ f, c: calcularPagamentoFuncionario(f.id, ano, mes) }))
             .sort((a,b) => b.c.total - a.c.total)
             .map(({f,c}) => {
               const mudas = c.detalhes.reduce((s,d)=>s+d.lote.qtd,0);
-              return \`<tr class="border-b hover:bg-gray-50">
-                <td class="py-2 font-medium">\${escapeHtml(f.nome)}</td>
-                <td><span class="badge \${c.tipoPagamento==='salario_fixo'?'bg-gray-200 text-gray-800':'bg-green-100 text-green-800'}">\${c.tipoPagamento==='salario_fixo'?'Fixo':'Por muda'}</span></td>
-                <td class="text-right">\${fmtNum(mudas)}</td>
-                <td class="text-right font-mono">\${fmtMoneyExato(c.total)}</td>
-                <td class="text-right no-print"><button onclick="STATE.pagFunc='\${f.id}';setView('pag_funcionario')" class="text-blue-700 hover:underline text-xs">Ver folha</button></td>
-              </tr>\`;
+              return `<tr class="border-b hover:bg-gray-50">
+                <td class="py-2 font-medium">${escapeHtml(f.nome)}</td>
+                <td><span class="badge ${c.tipoPagamento==='salario_fixo'?'bg-gray-200 text-gray-800':'bg-green-100 text-green-800'}">${c.tipoPagamento==='salario_fixo'?'Fixo':'Por muda'}</span></td>
+                <td class="text-right">${fmtNum(mudas)}</td>
+                <td class="text-right font-mono">${fmtMoneyExato(c.total)}</td>
+                <td class="text-right no-print"><button onclick="STATE.pagFunc='${f.id}';setView('pag_funcionario')" class="text-blue-700 hover:underline text-xs">Ver folha</button></td>
+              </tr>`;
             }).join('')}
           <tr class="bg-green-50 font-bold">
             <td class="py-2" colspan="3">TOTAL</td>
-            <td class="text-right font-mono text-green-800">\${fmtMoneyExato(pagTotal)}</td>
+            <td class="text-right font-mono text-green-800">${fmtMoneyExato(pagTotal)}</td>
             <td class="no-print"></td>
           </tr>
         </tbody>
       </table>
     </div>
-  \`;
+  `;
 };
 
 // ============================================================
@@ -478,62 +474,62 @@ VIEWS.vazias = function() {
     porE[k] = porE[k] || { estufa:v.estufa, items:[] };
     porE[k].items.push(v);
   }
-  $('#content').innerHTML = \`
+  $('#content').innerHTML = `
     <div class="flex items-center justify-between mb-4">
       <h2 class="text-2xl font-bold">📭 Bancadas vazias</h2>
-      \${isAdmin()?'<button onclick="novoLote()" class="bg-green-700 text-white px-4 py-2 rounded">+ Plantar lote</button>':''}
+      ${isAdmin()?'<button onclick="novoLote()" class="bg-green-700 text-white px-4 py-2 rounded">+ Plantar lote</button>':''}
     </div>
     <div class="bg-blue-50 border border-blue-200 p-3 rounded mb-4 text-sm">
-      <p><b>\${vazias.length} bancadas precisando de plantio.</b></p>
+      <p><b>${vazias.length} bancadas precisando de plantio.</b></p>
       <p class="text-blue-800 mt-1">Inclui: bancadas com lotes só vencidos (>13m) que precisam ser replantadas + slots cadastrados sem nenhum lote + slots esperados pela estufa (1 até nº de bancadas) que ainda não têm cadastro.</p>
     </div>
-    \${Object.values(porE).length === 0 ? '<div class="bg-white p-8 rounded-xl shadow text-center text-gray-500">Nenhuma bancada vazia. Tudo plantado! ✅</div>' :
-      Object.values(porE).sort((a,b) => a.estufa.nome.localeCompare(b.estufa.nome)).map(g => \`
+    ${Object.values(porE).length === 0 ? '<div class="bg-white p-8 rounded-xl shadow text-center text-gray-500">Nenhuma bancada vazia. Tudo plantado! ✅</div>' :
+      Object.values(porE).sort((a,b) => a.estufa.nome.localeCompare(b.estufa.nome)).map(g => `
         <div class="bg-white rounded-xl shadow mb-4 overflow-hidden">
           <div class="p-3 bg-gray-50 border-b">
-            <h3 class="font-bold">\${escapeHtml(g.estufa.nome)} <span class="text-sm font-normal text-gray-500">\${SITIO_LABEL[g.estufa.sitio]||''} · \${g.items.length} vazias</span></h3>
+            <h3 class="font-bold">${escapeHtml(g.estufa.nome)} <span class="text-sm font-normal text-gray-500">${SITIO_LABEL[g.estufa.sitio]||''} · ${g.items.length} vazias</span></h3>
           </div>
           <div class="p-4 flex flex-wrap gap-2">
-            \${g.items.sort((a,b) => a.bancada.numero.localeCompare(b.bancada.numero, undefined, {numeric:true})).map(v => \`
-              <div class="\${v.status.cor} border rounded-lg p-3 min-w-[120px]">
-                <div class="font-mono font-bold text-lg">BC \${escapeHtml(v.bancada.numero)}</div>
-                <div class="text-xs">\${v.status.label}</div>
-                <div class="text-xs text-gray-500">\${v.status.detalhe}</div>
-                \${isAdmin() && !v.slot ? \`<button onclick="editarBancadaVazia('\${v.bancada.id}','\${v.estufa.id}')" class="mt-2 w-full text-xs bg-white hover:bg-gray-50 border rounded px-2 py-1">Plantar / Excluir</button>\` :
-                isAdmin() ? \`<button onclick="plantarBancada('\${v.estufa.id}','\${escapeHtml(v.bancada.numero)}')" class="mt-2 w-full text-xs bg-green-600 text-white rounded px-2 py-1">+ Plantar aqui</button>\` : ''}
+            ${g.items.sort((a,b) => a.bancada.numero.localeCompare(b.bancada.numero, undefined, {numeric:true})).map(v => `
+              <div class="${v.status.cor} border rounded-lg p-3 min-w-[120px]">
+                <div class="font-mono font-bold text-lg">BC ${escapeHtml(v.bancada.numero)}</div>
+                <div class="text-xs">${v.status.label}</div>
+                <div class="text-xs text-gray-500">${v.status.detalhe}</div>
+                ${isAdmin() && !v.slot ? `<button onclick="editarBancadaVazia('${v.bancada.id}','${v.estufa.id}')" class="mt-2 w-full text-xs bg-white hover:bg-gray-50 border rounded px-2 py-1">Plantar / Excluir</button>` :
+                isAdmin() ? `<button onclick="plantarBancada('${v.estufa.id}','${escapeHtml(v.bancada.numero)}')" class="mt-2 w-full text-xs bg-green-600 text-white rounded px-2 py-1">+ Plantar aqui</button>` : ''}
               </div>
-            \`).join('')}
+            `).join('')}
           </div>
         </div>
-      \`).join('')}
-  \`;
+      `).join('')}
+  `;
 };
 
 window.editarBancadaVazia = function(bancadaId, estufaId) {
   const b = byId('bancadas', bancadaId);
   // Mostra todos os lotes (provavelmente vencidos) e oferece opcoes
   const lotes = STATE.data.lotes.filter(l => l.bancada_id === bancadaId);
-  openModal(\`BC \${b.numero} — ações\`, \`
-    <p class="text-sm text-gray-600 mb-3">\${lotes.length===0 ? 'Esta bancada não tem nenhum lote.' : 'Esta bancada tem '+lotes.length+' lote(s) vencido(s):'}</p>
-    \${lotes.length > 0 ? \`
+  openModal(`BC ${b.numero} — ações`, `
+    <p class="text-sm text-gray-600 mb-3">${lotes.length===0 ? 'Esta bancada não tem nenhum lote.' : 'Esta bancada tem '+lotes.length+' lote(s) vencido(s):'}</p>
+    ${lotes.length > 0 ? `
       <div class="space-y-2 mb-4">
-        \${lotes.map(l => {
+        ${lotes.map(l => {
           const idade = idadeMeses(l.data_plantio, new Date());
-          return \`<div class="bg-gray-50 p-2 rounded text-sm flex items-center justify-between">
+          return `<div class="bg-gray-50 p-2 rounded text-sm flex items-center justify-between">
             <div>
-              <div class="font-medium">\${escapeHtml(l.porta_enxerto||'-')} / \${escapeHtml(l.variedade||'-')}</div>
-              <div class="text-xs text-gray-500">\${fmtNum(l.qtd)} mudas · plantio \${fmtDate(l.data_plantio)} · \${idade}m</div>
+              <div class="font-medium">${escapeHtml(l.porta_enxerto||'-')} / ${escapeHtml(l.variedade||'-')}</div>
+              <div class="text-xs text-gray-500">${fmtNum(l.qtd)} mudas · plantio ${fmtDate(l.data_plantio)} · ${idade}m</div>
             </div>
-            <button onclick="if(confirm('Excluir este lote?')){DB.remove('lotes','\${l.id}').then(()=>{closeModal();setView('vazias');})}" class="text-red-700 text-xs hover:underline">excluir</button>
-          </div>\`;
+            <button onclick="if(confirm('Excluir este lote?')){DB.remove('lotes','${l.id}').then(()=>{closeModal();setView('vazias');})}" class="text-red-700 text-xs hover:underline">excluir</button>
+          </div>`;
         }).join('')}
       </div>
-    \` : ''}
+    ` : ''}
     <div class="flex justify-end gap-2 pt-2">
       <button onclick="closeModal()" class="px-4 py-2 border rounded">Fechar</button>
-      <button onclick="plantarBancada('\${estufaId}','\${escapeHtml(b.numero)}')" class="px-4 py-2 bg-green-700 text-white rounded">+ Plantar novo lote</button>
+      <button onclick="plantarBancada('${estufaId}','${escapeHtml(b.numero)}')" class="px-4 py-2 bg-green-700 text-white rounded">+ Plantar novo lote</button>
     </div>
-  \`);
+  `);
 };
 
 window.plantarBancada = function(estufaId, numero) {
@@ -555,16 +551,16 @@ window.plantarBancada = function(estufaId, numero) {
 VIEWS.vencidos = function() {
   const venc = lotesVencidos();
   const totMudas = venc.reduce((s,l)=>s+l.qtd,0);
-  $('#content').innerHTML = \`
+  $('#content').innerHTML = `
     <div class="flex items-center justify-between mb-4">
       <h2 class="text-2xl font-bold">⚠️ Bancadas vencidas (>13 meses)</h2>
     </div>
     <div class="bg-yellow-50 border border-yellow-200 p-3 rounded mb-4 text-sm">
-      <p><b>\${venc.length} lotes vencidos · \${fmtNum(totMudas)} mudas.</b></p>
+      <p><b>${venc.length} lotes vencidos · ${fmtNum(totMudas)} mudas.</b></p>
       <p class="text-yellow-800 mt-1">Vencido = passou de 13 meses desde o plantio. Pelo regulamento, não recebe mais pagamento. Você pode editar a data de plantio (caso esteja errada) ou excluir/registrar saída.</p>
     </div>
 
-    \${venc.length === 0 ? '<div class="bg-white p-8 rounded-xl shadow text-center text-gray-500">Nenhum lote vencido. ✅</div>' : \`
+    ${venc.length === 0 ? '<div class="bg-white p-8 rounded-xl shadow text-center text-gray-500">Nenhum lote vencido. ✅</div>' : `
     <div class="bg-white rounded-xl shadow overflow-x-auto">
       <table class="w-full text-sm">
         <thead class="bg-gray-50 text-xs uppercase text-gray-600">
@@ -581,30 +577,30 @@ VIEWS.vencidos = function() {
           </tr>
         </thead>
         <tbody>
-          \${venc.sort((a,b) => b.idade - a.idade).map(l => {
+          ${venc.sort((a,b) => b.idade - a.idade).map(l => {
             const b = byId('bancadas', l.bancada_id);
             const e = b ? byId('estufas', b.estufa_id) : null;
             const f = byId('funcionarios', l.funcionario_id);
-            return \`<tr class="border-t hover:bg-red-50">
-              <td class="p-2">\${escapeHtml(e?.nome||'?')}</td>
-              <td class="p-2 font-mono">\${escapeHtml(b?.numero||'?')}</td>
-              <td class="p-2">\${escapeHtml(f?.nome||'-')}</td>
-              <td class="p-2">\${escapeHtml(l.porta_enxerto||'-')}</td>
-              <td class="p-2">\${escapeHtml(l.variedade||'-')}</td>
-              <td class="p-2 text-right">\${fmtNum(l.qtd)}</td>
-              <td class="p-2 text-center">\${fmtDate(l.data_plantio)}</td>
-              <td class="p-2 text-right text-red-700 font-bold">\${l.idade}m</td>
+            return `<tr class="border-t hover:bg-red-50">
+              <td class="p-2">${escapeHtml(e?.nome||'?')}</td>
+              <td class="p-2 font-mono">${escapeHtml(b?.numero||'?')}</td>
+              <td class="p-2">${escapeHtml(f?.nome||'-')}</td>
+              <td class="p-2">${escapeHtml(l.porta_enxerto||'-')}</td>
+              <td class="p-2">${escapeHtml(l.variedade||'-')}</td>
+              <td class="p-2 text-right">${fmtNum(l.qtd)}</td>
+              <td class="p-2 text-center">${fmtDate(l.data_plantio)}</td>
+              <td class="p-2 text-right text-red-700 font-bold">${l.idade}m</td>
               <td class="p-2 text-center no-print">
-                <button onclick="editarLote('\${l.id}')" class="text-blue-700 hover:underline text-xs">editar</button>
-                · <button onclick="novaSaida('\${l.id}')" class="text-green-700 hover:underline text-xs">saída</button>
-                · <button onclick="deletarLote('\${l.id}')" class="text-red-700 hover:underline text-xs">excluir</button>
+                <button onclick="editarLote('${l.id}')" class="text-blue-700 hover:underline text-xs">editar</button>
+                · <button onclick="novaSaida('${l.id}')" class="text-green-700 hover:underline text-xs">saída</button>
+                · <button onclick="deletarLote('${l.id}')" class="text-red-700 hover:underline text-xs">excluir</button>
               </td>
-            </tr>\`;
+            </tr>`;
           }).join('')}
         </tbody>
       </table>
-    </div>\`}
-  \`;
+    </div>`}
+  `;
 };
 
 // ============================================================
@@ -632,22 +628,22 @@ VIEWS.lotes = function() {
             const e = b ? byId('estufas', b.estufa_id) : null;
             const f = byId('funcionarios', l.funcionario_id);
             const idade = idadeMeses(l.data_plantio, new Date());
-            let status = \`<span class="badge bg-green-100 text-green-800">\${idade}m ativo</span>\`;
-            if (idade === 12) status = \`<span class="badge bg-yellow-100 text-yellow-800">\${idade}m última parcela</span>\`;
-            if (idade === 13) status = \`<span class="badge bg-orange-100 text-orange-800">\${idade}m retenção</span>\`;
-            if (idade > 13) status = \`<span class="badge bg-red-100 text-red-800">\${idade}m vencido</span>\`;
-            return \`<tr class="border-t hover:bg-gray-50">
-              <td class="p-2">\${escapeHtml(e?.nome||'?')}</td>
-              <td>\${escapeHtml(b?.numero||'?')}</td>
-              <td>\${fmtNum(l.qtd)}</td>
-              <td>\${escapeHtml(l.porta_enxerto||'-')}</td>
-              <td>\${escapeHtml(l.variedade||'-')}</td>
-              <td>\${fmtDate(l.data_plantio)}</td>
-              <td>\${idade}m</td>
-              <td>\${escapeHtml(f?.nome||'-')}</td>
-              <td>\${status}</td>
-              \${isAdmin()?\`<td><button onclick="editarLote('\${l.id}')" class="text-blue-700 text-xs hover:underline">editar</button> · <button onclick="deletarLote('\${l.id}')" class="text-red-700 text-xs hover:underline">excluir</button></td>\`:''}
-            </tr>\`;
+            let status = `<span class="badge bg-green-100 text-green-800">${idade}m ativo</span>`;
+            if (idade === 12) status = `<span class="badge bg-yellow-100 text-yellow-800">${idade}m última parcela</span>`;
+            if (idade === 13) status = `<span class="badge bg-orange-100 text-orange-800">${idade}m retenção</span>`;
+            if (idade > 13) status = `<span class="badge bg-red-100 text-red-800">${idade}m vencido</span>`;
+            return `<tr class="border-t hover:bg-gray-50">
+              <td class="p-2">${escapeHtml(e?.nome||'?')}</td>
+              <td>${escapeHtml(b?.numero||'?')}</td>
+              <td>${fmtNum(l.qtd)}</td>
+              <td>${escapeHtml(l.porta_enxerto||'-')}</td>
+              <td>${escapeHtml(l.variedade||'-')}</td>
+              <td>${fmtDate(l.data_plantio)}</td>
+              <td>${idade}m</td>
+              <td>${escapeHtml(f?.nome||'-')}</td>
+              <td>${status}</td>
+              ${isAdmin()?`<td><button onclick="editarLote('${l.id}')" class="text-blue-700 text-xs hover:underline">editar</button> · <button onclick="deletarLote('${l.id}')" class="text-red-700 text-xs hover:underline">excluir</button></td>`:''}
+            </tr>`;
           }).join('')}
         </tbody>
       </table>
@@ -713,7 +709,7 @@ function formLote(lote) {
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label class="text-sm font-medium">Quantidade de mudas</label>
-          <input id="lQtd" type="number" min="1" required value="\${lote.qtd||''}" class="w-full mt-1 px-3 py-2 border rounded">
+          <input id="lQtd" type="number" min="1" required value="${lote.qtd||''}" class="w-full mt-1 px-3 py-2 border rounded">
         </div>
         <div>
           <label class="text-sm font-medium">Funcionário</label>
@@ -723,33 +719,33 @@ function formLote(lote) {
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label class="text-sm font-medium">Porta-enxerto</label>
-          <input id="lPorta" type="text" value="\${escapeHtml(lote.porta_enxerto||'')}" class="w-full mt-1 px-3 py-2 border rounded">
+          <input id="lPorta" type="text" value="${escapeHtml(lote.porta_enxerto||'')}" class="w-full mt-1 px-3 py-2 border rounded">
         </div>
         <div>
           <label class="text-sm font-medium">Variedade (copa)</label>
-          <input id="lVar" type="text" value="\${escapeHtml(lote.variedade||'')}" class="w-full mt-1 px-3 py-2 border rounded">
+          <input id="lVar" type="text" value="${escapeHtml(lote.variedade||'')}" class="w-full mt-1 px-3 py-2 border rounded">
         </div>
       </div>
       <div class="grid grid-cols-3 gap-3">
         <div>
           <label class="text-sm font-medium">Tipo</label>
           <select id="lTipo" class="w-full mt-1 px-3 py-2 border rounded">
-            <option value="muda_normal" \${lote.tipo==='muda_normal'?'selected':''}>Muda normal</option>
-            <option value="inter_enxerto" \${lote.tipo==='inter_enxerto'?'selected':''}>Inter-enxerto</option>
+            <option value="muda_normal" ${lote.tipo==='muda_normal'?'selected':''}>Muda normal</option>
+            <option value="inter_enxerto" ${lote.tipo==='inter_enxerto'?'selected':''}>Inter-enxerto</option>
           </select>
         </div>
         <div>
           <label class="text-sm font-medium">Data de plantio</label>
-          <input id="lPlantio" type="date" required value="\${lote.data_plantio||''}" class="w-full mt-1 px-3 py-2 border rounded">
+          <input id="lPlantio" type="date" required value="${lote.data_plantio||''}" class="w-full mt-1 px-3 py-2 border rounded">
         </div>
         <div>
           <label class="text-sm font-medium">Data do enxerto</label>
-          <input id="lEnxerto" type="date" value="\${lote.data_enxerto||''}" class="w-full mt-1 px-3 py-2 border rounded">
+          <input id="lEnxerto" type="date" value="${lote.data_enxerto||''}" class="w-full mt-1 px-3 py-2 border rounded">
         </div>
       </div>
       <div>
         <label class="text-sm font-medium">Nº Processo da bancada</label>
-        <input id="lProcesso" type="text" placeholder="ex: 20251257 (em branco usa o padrão da estufa)" value="\${escapeHtml(lote.bancada_id ? (byId('bancadas', lote.bancada_id)?.processo || '') : '')}" class="w-full mt-1 px-3 py-2 border rounded">
+        <input id="lProcesso" type="text" placeholder="ex: 20251257 (em branco usa o padrão da estufa)" value="${escapeHtml(lote.bancada_id ? (byId('bancadas', lote.bancada_id)?.processo || '') : '')}" class="w-full mt-1 px-3 py-2 border rounded">
         <p class="text-xs text-gray-500 mt-1">Esse número aparece nas plaquinhas. Se ficar em branco, usa o padrão da configuração de plaquinhas.</p>
       </div>
       <div class="flex justify-end gap-2 pt-3">
@@ -789,7 +785,7 @@ function formLote(lote) {
 }
 
 // ============================================================
-// PAGAMENTOS
+// PAGAMENTOS - 4 ABAS
 // ============================================================
 function painelVerificacao(detalhes) {
   const porSitio = {};
@@ -819,19 +815,19 @@ function painelVerificacao(detalhes) {
           ${Object.entries(porSitio).map(([s,g]) => {
             const esp = g.mudas * g.valorUnit;
             const ok = Math.abs(esp - g.valor) < 0.01;
-            return \`<tr class="border-b border-blue-100">
-              <td class="py-1">\${SITIO_LABEL[s]||s}</td>
-              <td class="text-right">\${fmtNum(g.mudas)}</td>
+            return `<tr class="border-b border-blue-100">
+              <td class="py-1">${SITIO_LABEL[s]||s}</td>
+              <td class="text-right">${fmtNum(g.mudas)}</td>
               <td class="text-center text-gray-500">×</td>
-              <td class="text-right font-mono">\${fmtUnitario(g.valorUnit)}</td>
+              <td class="text-right font-mono">${fmtUnitario(g.valorUnit)}</td>
               <td class="text-center text-gray-500">=</td>
-              <td class="text-right font-mono \${ok?'':'text-red-700'}">\${fmtMoneyExato(g.valor)}\${ok?' ✅':' ⚠️'}</td>
-            </tr>\`;
+              <td class="text-right font-mono ${ok?'':'text-red-700'}">${fmtMoneyExato(g.valor)}${ok?' ✅':' ⚠️'}</td>
+            </tr>`;
           }).join('')}
           <tr class="font-bold">
             <td class="py-2">TOTAL</td>
             <td colspan="4"></td>
-            <td class="text-right font-mono text-blue-800">\${fmtMoneyExato(total)}</td>
+            <td class="text-right font-mono text-blue-800">${fmtMoneyExato(total)}</td>
           </tr>
         </tbody>
       </table>
@@ -860,12 +856,12 @@ VIEWS.pag_resumo = function() {
       <button onclick="window.print()" class="bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded text-sm">🖨️ Imprimir</button>
     </div>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-      <div class="bg-white p-4 rounded-xl shadow"><div class="text-xs text-gray-500">Total geral</div><div class="text-2xl font-bold text-green-700">\${fmtMoneyExato(total)}</div></div>
-      <div class="bg-white p-4 rounded-xl shadow"><div class="text-xs text-gray-500">Por muda</div><div class="text-2xl font-bold text-blue-700">\${fmtMoneyExato(totalMudas)}</div></div>
-      <div class="bg-white p-4 rounded-xl shadow"><div class="text-xs text-gray-500">Salários fixos</div><div class="text-2xl font-bold text-gray-700">\${fmtMoneyExato(totalFixos)}</div></div>
+      <div class="bg-white p-4 rounded-xl shadow"><div class="text-xs text-gray-500">Total geral</div><div class="text-2xl font-bold text-green-700">${fmtMoneyExato(total)}</div></div>
+      <div class="bg-white p-4 rounded-xl shadow"><div class="text-xs text-gray-500">Por muda</div><div class="text-2xl font-bold text-blue-700">${fmtMoneyExato(totalMudas)}</div></div>
+      <div class="bg-white p-4 rounded-xl shadow"><div class="text-xs text-gray-500">Salários fixos</div><div class="text-2xl font-bold text-gray-700">${fmtMoneyExato(totalFixos)}</div></div>
     </div>
     <div class="bg-white rounded-xl shadow overflow-hidden print-area">
-      <div class="p-4 border-b"><h3 class="font-bold">Folha de pagamento — \${nomesMes(r.mes)}/\${r.ano}</h3></div>
+      <div class="p-4 border-b"><h3 class="font-bold">Folha de pagamento — ${nomesMes(r.mes)}/${r.ano}</h3></div>
       <table class="w-full text-sm">
         <thead class="bg-gray-50 text-xs uppercase text-gray-600">
           <tr><th class="p-3 text-left">Funcionário</th><th class="p-3 text-left">Tipo</th>
@@ -874,7 +870,7 @@ VIEWS.pag_resumo = function() {
             <th class="p-3 text-right">Total</th><th class="no-print"></th></tr>
         </thead>
         <tbody>
-          \${linhas.map(({f,c}) => {
+          ${linhas.map(({f,c}) => {
             let confer = '';
             if (c.tipoPagamento === 'por_muda' && c.detalhes.length) {
               const ps = {};
@@ -885,19 +881,19 @@ VIEWS.pag_resumo = function() {
               }
               confer = '<span class="text-xs text-gray-600 font-mono">' + Object.entries(ps).map(([s,g]) => fmtNum(g.mudas)+'×'+fmtUnitario(g.unit).slice(0,5)).join(' + ') + '</span>';
             }
-            return \`<tr class="border-t hover:bg-gray-50">
-              <td class="p-3 font-medium">\${escapeHtml(f.nome)}</td>
-              <td class="p-3"><span class="badge \${c.tipoPagamento==='salario_fixo'?'bg-gray-200 text-gray-800':'bg-green-100 text-green-800'}">\${c.tipoPagamento==='salario_fixo'?'Salário fixo':'Por muda'}</span></td>
-              <td class="p-3 text-right">\${c.detalhes.length}</td>
-              <td class="p-3 text-right">\${fmtNum(c.detalhes.reduce((s,d)=>s+d.lote.qtd,0))}</td>
-              <td class="p-3 text-right">\${confer}</td>
-              <td class="p-3 text-right font-mono font-semibold">\${fmtMoneyExato(c.total)}</td>
-              <td class="no-print text-right pr-3"><button onclick="STATE.pagFunc='\${f.id}';setView('pag_funcionario')" class="text-blue-700 hover:underline text-xs">Ver folha</button></td>
-            </tr>\`;
+            return `<tr class="border-t hover:bg-gray-50">
+              <td class="p-3 font-medium">${escapeHtml(f.nome)}</td>
+              <td class="p-3"><span class="badge ${c.tipoPagamento==='salario_fixo'?'bg-gray-200 text-gray-800':'bg-green-100 text-green-800'}">${c.tipoPagamento==='salario_fixo'?'Salário fixo':'Por muda'}</span></td>
+              <td class="p-3 text-right">${c.detalhes.length}</td>
+              <td class="p-3 text-right">${fmtNum(c.detalhes.reduce((s,d)=>s+d.lote.qtd,0))}</td>
+              <td class="p-3 text-right">${confer}</td>
+              <td class="p-3 text-right font-mono font-semibold">${fmtMoneyExato(c.total)}</td>
+              <td class="no-print text-right pr-3"><button onclick="STATE.pagFunc='${f.id}';setView('pag_funcionario')" class="text-blue-700 hover:underline text-xs">Ver folha</button></td>
+            </tr>`;
           }).join('')}
           <tr class="bg-green-100 font-bold">
             <td class="p-3" colspan="5">TOTAL GERAL</td>
-            <td class="p-3 text-right font-mono text-green-800">\${fmtMoneyExato(total)}</td>
+            <td class="p-3 text-right font-mono text-green-800">${fmtMoneyExato(total)}</td>
             <td class="no-print"></td>
           </tr>
         </tbody>
@@ -934,22 +930,28 @@ VIEWS.pag_funcionario = function() {
   if (f && c) $('#folhaInd').innerHTML = renderFolhaIndividual(f, c, r.ano, r.mes);
 };
 
+window.abrirFolhaPagamento = function(funcId, ano, mes) {
+  STATE.pagFunc = funcId;
+  STATE.refMes = ano + '-' + String(mes).padStart(2,'0');
+  setView('pag_funcionario');
+};
+
 function renderFolhaIndividual(f, c, ano, mes) {
   if (c.tipoPagamento === 'salario_fixo') {
-    return \`
+    return `
       <div class="text-center mb-4">
         <h2 class="text-xl font-bold">FOLHA DE PAGAMENTO</h2>
-        <p class="text-lg">\${escapeHtml(f.nome)}</p>
-        <p class="text-sm text-gray-600">Referência: \${nomesMes(mes)} / \${ano}</p>
+        <p class="text-lg">${escapeHtml(f.nome)}</p>
+        <p class="text-sm text-gray-600">Referência: ${nomesMes(mes)} / ${ano}</p>
       </div>
       <div class="bg-gray-50 border rounded-xl p-6 text-center">
         <p class="text-sm text-gray-600 mb-1">Funcionário com salário fixo mensal</p>
-        <p class="text-4xl font-bold text-green-800">\${fmtMoneyExato(f.salario_fixo)}</p>
+        <p class="text-4xl font-bold text-green-800">${fmtMoneyExato(f.salario_fixo)}</p>
       </div>
       <div class="mt-12 grid grid-cols-2 gap-8 text-sm">
         <div class="text-center"><div class="border-t border-gray-400 pt-2">Funcionário</div></div>
         <div class="text-center"><div class="border-t border-gray-400 pt-2">Responsável</div></div>
-      </div>\`;
+      </div>`;
   }
   const porEstufa = {};
   for (const d of c.detalhes) {
@@ -960,16 +962,16 @@ function renderFolhaIndividual(f, c, ano, mes) {
     porEstufa[k].mudas += d.lote.qtd;
     porEstufa[k].enxertos += qtdEnxertos(d.lote);
   }
-  return \`
+  return `
     <div class="text-center mb-4">
       <h2 class="text-xl font-bold">FOLHA DE PAGAMENTO</h2>
-      <p class="text-lg">\${escapeHtml(f.nome)}</p>
-      <p class="text-sm text-gray-600">Referência: \${nomesMes(mes)} / \${ano}</p>
+      <p class="text-lg">${escapeHtml(f.nome)}</p>
+      <p class="text-sm text-gray-600">Referência: ${nomesMes(mes)} / ${ano}</p>
     </div>
-    \${Object.values(porEstufa).map(g => \`
+    ${Object.values(porEstufa).map(g => `
       <h4 class="font-bold mt-4 bg-gray-100 p-2 rounded">
-        \${escapeHtml(g.estufa?.nome||'?')}
-        <span class="text-xs font-normal text-gray-600 ml-2">\${SITIO_LABEL[g.estufa?.sitio]||''}</span>
+        ${escapeHtml(g.estufa?.nome||'?')}
+        <span class="text-xs font-normal text-gray-600 ml-2">${SITIO_LABEL[g.estufa?.sitio]||''}</span>
       </h4>
       <table class="w-full text-xs border mb-2">
         <thead class="bg-gray-50">
@@ -986,32 +988,32 @@ function renderFolhaIndividual(f, c, ano, mes) {
           </tr>
         </thead>
         <tbody>
-          \${g.items.map(d => \`<tr>
-            <td class="p-2 border font-mono">\${escapeHtml(d.bancada?.numero||'?')}</td>
-            <td class="p-2 border text-right">\${fmtNum(d.lote.qtd)}</td>
-            <td class="p-2 border text-right">\${fmtNum(qtdEnxertos(d.lote))}</td>
-            <td class="p-2 border">\${escapeHtml(d.lote.porta_enxerto||'-')}</td>
-            <td class="p-2 border">\${escapeHtml(d.lote.variedade||'-')}</td>
-            <td class="p-2 border text-center">\${fmtDate(d.lote.data_plantio)}</td>
-            <td class="p-2 border text-center">\${d.parcela}/12\${d.motivo.includes('retencao')?' <b class="text-red-700">+RET</b>':''}</td>
-            <td class="p-2 border text-right font-mono">\${fmtUnitario(d.valorUnitario)}</td>
-            <td class="p-2 border text-right font-mono font-semibold">\${fmtMoneyExato(d.valor)}</td>
-          </tr>\`).join('')}
+          ${g.items.map(d => `<tr>
+            <td class="p-2 border font-mono">${escapeHtml(d.bancada?.numero||'?')}</td>
+            <td class="p-2 border text-right">${fmtNum(d.lote.qtd)}</td>
+            <td class="p-2 border text-right">${fmtNum(qtdEnxertos(d.lote))}</td>
+            <td class="p-2 border">${escapeHtml(d.lote.porta_enxerto||'-')}</td>
+            <td class="p-2 border">${escapeHtml(d.lote.variedade||'-')}</td>
+            <td class="p-2 border text-center">${fmtDate(d.lote.data_plantio)}</td>
+            <td class="p-2 border text-center">${d.parcela}/12${d.motivo.includes('retencao')?' <b class="text-red-700">+RET</b>':''}</td>
+            <td class="p-2 border text-right font-mono">${fmtUnitario(d.valorUnitario)}</td>
+            <td class="p-2 border text-right font-mono font-semibold">${fmtMoneyExato(d.valor)}</td>
+          </tr>`).join('')}
           <tr class="bg-gray-100 font-bold">
             <td class="p-2 border">Subtotal</td>
-            <td class="p-2 border text-right">\${fmtNum(g.mudas)}</td>
-            <td class="p-2 border text-right">\${fmtNum(g.enxertos)}</td>
+            <td class="p-2 border text-right">${fmtNum(g.mudas)}</td>
+            <td class="p-2 border text-right">${fmtNum(g.enxertos)}</td>
             <td colspan="5" class="border"></td>
-            <td class="p-2 border text-right font-mono">\${fmtMoneyExato(g.subtotal)}</td>
+            <td class="p-2 border text-right font-mono">${fmtMoneyExato(g.subtotal)}</td>
           </tr>
         </tbody>
       </table>
-    \`).join('')}
+    `).join('')}
     <div class="bg-green-100 p-4 rounded-xl mt-4 flex justify-between items-baseline">
       <span class="text-sm font-medium">TOTAL A RECEBER:</span>
-      <span class="text-3xl font-bold text-green-800">\${fmtMoneyExato(c.total)}</span>
+      <span class="text-3xl font-bold text-green-800">${fmtMoneyExato(c.total)}</span>
     </div>
-    \${painelVerificacao(c.detalhes)}
+    ${painelVerificacao(c.detalhes)}
     <div class="mt-12 grid grid-cols-2 gap-8 text-sm">
       <div class="text-center"><div class="border-t border-gray-400 pt-2">Funcionário</div></div>
       <div class="text-center"><div class="border-t border-gray-400 pt-2">Responsável</div></div>
@@ -1047,12 +1049,12 @@ VIEWS.pag_estufa = function() {
       <button onclick="window.print()" class="bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded text-sm">🖨️ Imprimir</button>
     </div>
     <div class="grid md:grid-cols-3 gap-3 mb-4">
-      ${Object.entries(sitios).map(([s,d]) => \`
+      ${Object.entries(sitios).map(([s,d]) => `
         <div class="bg-white p-4 rounded-xl shadow">
-          <div class="text-xs text-gray-500">\${SITIO_LABEL[s]||s}</div>
-          <div class="text-xl font-bold text-green-700">\${fmtMoneyExato(d.total)}</div>
-          <div class="text-xs text-gray-500 mt-1">\${d.estufas} estufas · \${fmtNum(d.mudas)} mudas</div>
-        </div>\`).join('')}
+          <div class="text-xs text-gray-500">${SITIO_LABEL[s]||s}</div>
+          <div class="text-xl font-bold text-green-700">${fmtMoneyExato(d.total)}</div>
+          <div class="text-xs text-gray-500 mt-1">${d.estufas} estufas · ${fmtNum(d.mudas)} mudas</div>
+        </div>`).join('')}
     </div>
     <div class="bg-white rounded-xl shadow overflow-hidden print-area">
       <table class="w-full text-sm">
@@ -1063,18 +1065,18 @@ VIEWS.pag_estufa = function() {
             <th class="p-3 text-right">Total a pagar</th></tr>
         </thead>
         <tbody>
-          ${Object.values(grupos).sort((a,b)=>b.total-a.total).map(g => \`<tr class="border-t hover:bg-gray-50">
-            <td class="p-3 font-medium">\${escapeHtml(g.estufa.nome)}</td>
-            <td class="p-3 text-gray-600">\${SITIO_LABEL[g.estufa.sitio]||g.estufa.sitio}</td>
-            <td class="p-3 text-right">\${g.lotes}</td>
-            <td class="p-3 text-right">\${fmtNum(g.mudas)}</td>
-            <td class="p-3 text-right">\${fmtNum(g.enxertos)}</td>
-            <td class="p-3 text-right">\${g.funcs.size}</td>
-            <td class="p-3 text-right font-mono font-semibold">\${fmtMoneyExato(g.total)}</td>
-          </tr>\`).join('')}
+          ${Object.values(grupos).sort((a,b)=>b.total-a.total).map(g => `<tr class="border-t hover:bg-gray-50">
+            <td class="p-3 font-medium">${escapeHtml(g.estufa.nome)}</td>
+            <td class="p-3 text-gray-600">${SITIO_LABEL[g.estufa.sitio]||g.estufa.sitio}</td>
+            <td class="p-3 text-right">${g.lotes}</td>
+            <td class="p-3 text-right">${fmtNum(g.mudas)}</td>
+            <td class="p-3 text-right">${fmtNum(g.enxertos)}</td>
+            <td class="p-3 text-right">${g.funcs.size}</td>
+            <td class="p-3 text-right font-mono font-semibold">${fmtMoneyExato(g.total)}</td>
+          </tr>`).join('')}
           <tr class="bg-green-100 font-bold">
             <td class="p-3" colspan="6">TOTAL GERAL</td>
-            <td class="p-3 text-right font-mono text-green-800">\${fmtMoneyExato(totalGeral)}</td>
+            <td class="p-3 text-right font-mono text-green-800">${fmtMoneyExato(totalGeral)}</td>
           </tr>
         </tbody>
       </table>
@@ -1102,14 +1104,14 @@ VIEWS.pag_mensal = function() {
     <div class="bg-white p-4 rounded-xl shadow mb-4">
       <h3 class="font-bold mb-3">Total a pagar por mês</h3>
       <div class="space-y-2">
-        ${totaisMes.map(t => \`
+        ${totaisMes.map(t => `
           <div class="flex items-center gap-3">
-            <div class="w-16 text-xs text-gray-600">\${t.label}</div>
+            <div class="w-16 text-xs text-gray-600">${t.label}</div>
             <div class="flex-1 bg-gray-100 rounded h-6 relative overflow-hidden">
-              <div class="bg-green-600 h-full" style="width:\${(t.total/max*100).toFixed(1)}%"></div>
-              <div class="absolute inset-0 flex items-center px-2 text-xs font-mono">\${fmtMoneyExato(t.total)}</div>
+              <div class="bg-green-600 h-full" style="width:${(t.total/max*100).toFixed(1)}%"></div>
+              <div class="absolute inset-0 flex items-center px-2 text-xs font-mono">${fmtMoneyExato(t.total)}</div>
             </div>
-          </div>\`).join('')}
+          </div>`).join('')}
       </div>
     </div>
     <div class="bg-white rounded-xl shadow overflow-x-auto print-area">
@@ -1124,11 +1126,11 @@ VIEWS.pag_mensal = function() {
           ${funcs.map(f => {
             const vals = meses.map(({ano,mes}) => calcularPagamentoFuncionario(f.id, ano, mes).total);
             const tot = vals.reduce((s,v)=>s+v,0);
-            return \`<tr class="border-t hover:bg-gray-50">
-              <td class="p-2 font-medium sticky left-0 bg-white">\${escapeHtml(f.nome)}</td>
-              \${vals.map(v => '<td class="p-2 text-right font-mono '+(v>0?'':'text-gray-400')+'">'+(v>0?fmtMoneyExato(v).replace('R$ ',''):'-')+'</td>').join('')}
-              <td class="p-2 text-right font-mono font-semibold bg-green-50">\${fmtMoneyExato(tot).replace('R$ ','')}</td>
-            </tr>\`;
+            return `<tr class="border-t hover:bg-gray-50">
+              <td class="p-2 font-medium sticky left-0 bg-white">${escapeHtml(f.nome)}</td>
+              ${vals.map(v => '<td class="p-2 text-right font-mono '+(v>0?'':'text-gray-400')+'">'+(v>0?fmtMoneyExato(v).replace('R$ ',''):'-')+'</td>').join('')}
+              <td class="p-2 text-right font-mono font-semibold bg-green-50">${fmtMoneyExato(tot).replace('R$ ','')}</td>
+            </tr>`;
           }).join('')}
           <tr class="bg-green-100 font-bold">
             <td class="p-2 sticky left-0 bg-green-100">TOTAL</td>
@@ -1142,7 +1144,7 @@ VIEWS.pag_mensal = function() {
 };
 
 // ============================================================
-// VISAO GERAL
+// VISAO GERAL com 3 abas
 // ============================================================
 function linhaLote(lote, ano, mes) {
   const b = byId('bancadas', lote.bancada_id);
@@ -1279,7 +1281,7 @@ function vgPorFuncionario(linhas) {
 }
 
 // ============================================================
-// CONSULTA
+// CONSULTA / FILTROS
 // ============================================================
 VIEWS.consulta = function() {
   STATE.consF = STATE.consF || { porta:'', variedade:'', estufa:'', funcionario:'' };
@@ -1367,7 +1369,8 @@ function renderConsulta() {
     return;
   }
 
-  const cruz = {};
+  // Breakdown porta-enxerto × variedade (sem enxerto vs cada copa)
+  const cruz = {};  // chave = porta_enxerto, valor = { semEnxerto: {...}, copas: {variedade: {...}} }
   for (const l of lotes) {
     const p = l.porta_enxerto || '(sem porta-enxerto)';
     cruz[p] = cruz[p] || { total:{mudas:0,valor:0,lotes:0}, semEnxerto:{mudas:0,valor:0,lotes:0}, copas:{} };
@@ -1386,56 +1389,104 @@ function renderConsulta() {
   }
 
   function tbl(title, rows, getName) {
-    return \`<div class="bg-white p-4 rounded-xl shadow"><h3 class="font-bold mb-2">\${title}</h3>
+    return `<div class="bg-white p-4 rounded-xl shadow"><h3 class="font-bold mb-2">${title}</h3>
       <table class="w-full text-sm"><thead class="text-xs text-gray-500 uppercase border-b"><tr>
         <th class="text-left py-1">Item</th><th class="text-right">Lotes</th><th class="text-right">Mudas</th><th class="text-right">Valor</th>
-      </tr></thead><tbody>\${rows.sort((a,b)=>b[1].mudas-a[1].mudas).map(([k,g]) =>
-        \`<tr class="border-b"><td class="py-1">\${escapeHtml(getName?getName(k,g):k)}</td><td class="text-right">\${g.lotes}</td><td class="text-right">\${fmtNum(g.mudas)}</td><td class="text-right font-mono">\${fmtMoneyExato(g.valor)}</td></tr>\`).join('')}</tbody></table></div>\`;
+      </tr></thead><tbody>${rows.sort((a,b)=>b[1].mudas-a[1].mudas).map(([k,g]) =>
+        `<tr class="border-b"><td class="py-1">${escapeHtml(getName?getName(k,g):k)}</td><td class="text-right">${g.lotes}</td><td class="text-right">${fmtNum(g.mudas)}</td><td class="text-right font-mono">${fmtMoneyExato(g.valor)}</td></tr>`).join('')}</tbody></table></div>`;
   }
-  $('#cResult').innerHTML = \`
+  $('#cResult').innerHTML = `
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-      <div class="bg-white p-4 rounded-xl shadow"><div class="text-xs text-gray-500 uppercase">Lotes</div><div class="text-2xl font-bold">\${lotes.length}</div></div>
-      <div class="bg-white p-4 rounded-xl shadow"><div class="text-xs text-gray-500 uppercase">Porta-enxertos</div><div class="text-2xl font-bold text-green-700">\${fmtNum(totMudas)}</div></div>
-      <div class="bg-white p-4 rounded-xl shadow"><div class="text-xs text-gray-500 uppercase">Enxertos</div><div class="text-2xl font-bold text-emerald-700">\${fmtNum(totEnx)}</div></div>
-      <div class="bg-white p-4 rounded-xl shadow"><div class="text-xs text-gray-500 uppercase">Valor \${nomesMes(r.mes).slice(0,3)}/\${r.ano}</div><div class="text-2xl font-bold text-blue-700">\${fmtMoneyExato(totVal)}</div></div>
+      <div class="bg-white p-4 rounded-xl shadow"><div class="text-xs text-gray-500 uppercase">Lotes</div><div class="text-2xl font-bold">${lotes.length}</div></div>
+      <div class="bg-white p-4 rounded-xl shadow"><div class="text-xs text-gray-500 uppercase">Porta-enxertos</div><div class="text-2xl font-bold text-green-700">${fmtNum(totMudas)}</div></div>
+      <div class="bg-white p-4 rounded-xl shadow"><div class="text-xs text-gray-500 uppercase">Enxertos</div><div class="text-2xl font-bold text-emerald-700">${fmtNum(totEnx)}</div></div>
+      <div class="bg-white p-4 rounded-xl shadow"><div class="text-xs text-gray-500 uppercase">Valor ${nomesMes(r.mes).slice(0,3)}/${r.ano}</div><div class="text-2xl font-bold text-blue-700">${fmtMoneyExato(totVal)}</div></div>
     </div>
     <div class="grid md:grid-cols-2 gap-4 mb-4">
-      \${tbl('Por estufa', Object.entries(porE), (k,g)=>g.nome)}
-      \${tbl('Por porta-enxerto', Object.entries(porP))}
-      \${tbl('Por variedade (copa)', Object.entries(porV))}
-      \${tbl('Por funcionário', Object.entries(porF), (k,g)=>g.nome)}
+      ${tbl('Por estufa', Object.entries(porE), (k,g)=>g.nome)}
+      ${tbl('Por porta-enxerto', Object.entries(porP))}
+      ${tbl('Por variedade (copa)', Object.entries(porV))}
+      ${tbl('Por funcionário', Object.entries(porF), (k,g)=>g.nome)}
     </div>
+
     <div class="bg-white rounded-xl shadow mb-4 overflow-hidden">
       <div class="p-4 border-b">
-        <h3 class="font-bold">🌱 Porta-enxerto × Copa</h3>
+        <h3 class="font-bold">🌱 Porta-enxerto × Copa (com vs sem enxerto)</h3>
+        <p class="text-xs text-gray-500 mt-1">Para cada porta-enxerto: quantos ainda <b>sem copa</b> e quantos já enxertados, separados por variedade.</p>
       </div>
       <div class="p-4 space-y-4">
-        \${Object.entries(cruz).sort((a,b) => b[1].total.mudas - a[1].total.mudas).map(([porta, g]) => \`
+        ${Object.entries(cruz).sort((a,b) => b[1].total.mudas - a[1].total.mudas).map(([porta, g]) => `
           <div class="border rounded-lg overflow-hidden">
             <div class="bg-green-50 px-3 py-2 flex justify-between items-baseline">
-              <h4 class="font-bold">\${escapeHtml(porta)}</h4>
-              <span class="text-sm">\${fmtNum(g.total.mudas)} mudas total · <span class="font-mono text-green-800 font-semibold">\${fmtMoneyExato(g.total.valor)}</span></span>
+              <h4 class="font-bold">${escapeHtml(porta)}</h4>
+              <span class="text-sm">${fmtNum(g.total.mudas)} mudas total · <span class="font-mono text-green-800 font-semibold">${fmtMoneyExato(g.total.valor)}</span></span>
             </div>
             <table class="w-full text-sm">
               <thead class="bg-gray-50 text-xs uppercase text-gray-600">
-                <tr><th class="p-2 text-left">Status</th><th class="p-2 text-right">Lotes</th><th class="p-2 text-right">Mudas</th><th class="p-2 text-right">Valor mês</th></tr>
+                <tr>
+                  <th class="p-2 text-left">Status</th>
+                  <th class="p-2 text-right">Lotes</th>
+                  <th class="p-2 text-right">Mudas</th>
+                  <th class="p-2 text-right">Valor mês</th>
+                </tr>
               </thead>
               <tbody>
-                \${g.semEnxerto.mudas > 0 ? \`<tr class="border-t bg-yellow-50">
-                  <td class="p-2"><span class="badge bg-yellow-200 text-yellow-900">⚠️ SEM ENXERTO</span></td>
-                  <td class="p-2 text-right">\${g.semEnxerto.lotes}</td><td class="p-2 text-right font-bold">\${fmtNum(g.semEnxerto.mudas)}</td><td class="p-2 text-right font-mono">\${fmtMoneyExato(g.semEnxerto.valor)}</td>
-                </tr>\` : ''}
-                \${Object.entries(g.copas).sort((a,b) => b[1].mudas - a[1].mudas).map(([cop, x]) => \`
+                ${g.semEnxerto.mudas > 0 ? `<tr class="border-t bg-yellow-50">
+                  <td class="p-2"><span class="badge bg-yellow-200 text-yellow-900">⚠️ SEM ENXERTO</span> <span class="text-xs text-gray-600">(porta-enxerto sem copa)</span></td>
+                  <td class="p-2 text-right">${g.semEnxerto.lotes}</td>
+                  <td class="p-2 text-right font-bold">${fmtNum(g.semEnxerto.mudas)}</td>
+                  <td class="p-2 text-right font-mono">${fmtMoneyExato(g.semEnxerto.valor)}</td>
+                </tr>` : ''}
+                ${Object.entries(g.copas).sort((a,b) => b[1].mudas - a[1].mudas).map(([cop, x]) => `
                   <tr class="border-t hover:bg-gray-50">
-                    <td class="p-2"><span class="badge bg-green-100 text-green-800">✓ enxertado</span> <span>\${escapeHtml(cop)}</span></td>
-                    <td class="p-2 text-right">\${x.lotes}</td><td class="p-2 text-right">\${fmtNum(x.mudas)}</td><td class="p-2 text-right font-mono">\${fmtMoneyExato(x.valor)}</td>
-                  </tr>\`).join('')}
+                    <td class="p-2"><span class="badge bg-green-100 text-green-800">✓ enxertado</span> <span>${escapeHtml(cop)}</span></td>
+                    <td class="p-2 text-right">${x.lotes}</td>
+                    <td class="p-2 text-right">${fmtNum(x.mudas)}</td>
+                    <td class="p-2 text-right font-mono">${fmtMoneyExato(x.valor)}</td>
+                  </tr>
+                `).join('')}
               </tbody>
             </table>
-          </div>\`).join('')}
+          </div>
+        `).join('')}
       </div>
     </div>
-  \`;
+    <div class="bg-white rounded-xl shadow overflow-x-auto print-area">
+      <div class="p-4 border-b"><h3 class="font-bold">Lotes encontrados (${lotes.length})</h3></div>
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 text-xs uppercase text-gray-600">
+          <tr><th class="p-2 text-left">Estufa</th><th class="p-2 text-left">BC</th>
+            <th class="p-2 text-left">Funcionário</th>
+            <th class="p-2 text-left">Porta-enxerto</th><th class="p-2 text-left">Variedade</th>
+            <th class="p-2 text-right">Qtd</th><th class="p-2 text-center">Plantio</th>
+            <th class="p-2 text-right">Valor mês</th></tr>
+        </thead>
+        <tbody>
+          ${lotes.map(l => {
+            const b = byId('bancadas', l.bancada_id);
+            const e = b ? byId('estufas', b.estufa_id) : null;
+            const fu = byId('funcionarios', l.funcionario_id);
+            const c = valorPagamentoLoteMes(l, r.ano, r.mes);
+            return `<tr class="border-t hover:bg-gray-50">
+              <td class="p-2">${escapeHtml(e?.nome||'?')}</td>
+              <td class="p-2 font-mono">${escapeHtml(b?.numero||'?')}</td>
+              <td class="p-2">${escapeHtml(fu?.nome||'-')}</td>
+              <td class="p-2">${escapeHtml(l.porta_enxerto||'-')}</td>
+              <td class="p-2">${escapeHtml(l.variedade||'-')}</td>
+              <td class="p-2 text-right">${fmtNum(l.qtd)}</td>
+              <td class="p-2 text-center">${fmtDate(l.data_plantio)}</td>
+              <td class="p-2 text-right font-mono">${fmtMoneyExato(c.valor)}</td>
+            </tr>`;
+          }).join('')}
+          <tr class="bg-green-100 font-bold">
+            <td class="p-2" colspan="5">TOTAL</td>
+            <td class="p-2 text-right">${fmtNum(totMudas)}</td><td></td>
+            <td class="p-2 text-right font-mono">${fmtMoneyExato(totVal)}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  `;
 }
 
 // ============================================================
@@ -1462,33 +1513,36 @@ VIEWS.estoque = function() {
     <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4 text-sm">
       <p class="font-bold text-blue-900 mb-1">ℹ️ Como funciona:</p>
       <ul class="text-blue-800 text-xs space-y-1 list-disc list-inside">
-        <li><b>Pagamento ao funcionário</b> = 12 meses sobre a quantidade <b>plantada</b></li>
-        <li><b>Estoque atual</b> = quantidade plantada − vendida</li>
+        <li><b>Pagamento ao funcionário</b> = 12 meses sobre a quantidade <b>plantada</b> (NÃO afetado por vendas/saídas)</li>
+        <li><b>Estoque atual</b> = quantidade plantada − vendida (independente do pagamento)</li>
+        <li>Se vender em 8m, 9m... funcionário continua recebendo até o mês 13</li>
+        <li>Após 13 meses: pagamento PARA, mas estoque continua sendo controlado até zerar</li>
       </ul>
     </div>
 
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-      <div class="bg-white p-4 rounded-xl shadow"><div class="text-xs text-gray-500 uppercase">Total plantado</div><div class="text-2xl font-bold text-gray-700">\${fmtNum(totalInicial)}</div></div>
-      <div class="bg-white p-4 rounded-xl shadow"><div class="text-xs text-gray-500 uppercase">Vendido / saída</div><div class="text-2xl font-bold text-blue-700">\${fmtNum(totalVendido)}</div></div>
-      <div class="bg-white p-4 rounded-xl shadow"><div class="text-xs text-gray-500 uppercase">Disponível agora</div><div class="text-2xl font-bold text-green-700">\${fmtNum(totalDisp)}</div></div>
-      <div class="bg-white p-4 rounded-xl shadow"><div class="text-xs text-gray-500 uppercase">Vencidos c/ estoque</div><div class="text-2xl font-bold text-red-700">\${lotesVencidosComEstoque}</div></div>
+      <div class="bg-white p-4 rounded-xl shadow"><div class="text-xs text-gray-500 uppercase">Total plantado</div><div class="text-2xl font-bold text-gray-700">${fmtNum(totalInicial)}</div></div>
+      <div class="bg-white p-4 rounded-xl shadow"><div class="text-xs text-gray-500 uppercase">Vendido / saída</div><div class="text-2xl font-bold text-blue-700">${fmtNum(totalVendido)}</div></div>
+      <div class="bg-white p-4 rounded-xl shadow"><div class="text-xs text-gray-500 uppercase">Disponível agora</div><div class="text-2xl font-bold text-green-700">${fmtNum(totalDisp)}</div></div>
+      <div class="bg-white p-4 rounded-xl shadow"><div class="text-xs text-gray-500 uppercase">Vencidos c/ estoque</div><div class="text-2xl font-bold text-red-700">${lotesVencidosComEstoque}</div><div class="text-xs text-gray-400">já sem pagamento</div></div>
     </div>
 
     <div class="bg-white rounded-xl shadow overflow-x-auto">
       <div class="p-3 border-b flex justify-between items-center">
         <h3 class="font-bold">Estoque por bancada</h3>
-        \${isAdmin()?'<button onclick="novaSaida()" class="bg-green-700 text-white px-3 py-1.5 rounded text-sm">+ Registrar venda/saída</button>':''}
+        ${isAdmin()?'<button onclick="novaSaida()" class="bg-green-700 text-white px-3 py-1.5 rounded text-sm">+ Registrar venda/saída</button>':''}
       </div>
       <table class="w-full text-sm">
         <thead class="bg-gray-50 text-xs uppercase text-gray-600">
           <tr class="text-left">
             <th class="p-2">Estufa</th><th>BC</th><th>Porta-enxerto</th><th>Variedade</th>
             <th class="text-right">Plantado</th><th class="text-right">Vendido</th><th class="text-right">Disponível</th>
-            <th class="text-center">Idade</th><th class="text-center">Status pagamento</th>
-            \${isAdmin()?'<th class="text-center">Ação</th>':''}
+            <th class="text-center">Idade</th>
+            <th class="text-center">Status pagamento</th>
+            ${isAdmin()?'<th class="text-center">Ação</th>':''}
           </tr>
         </thead>
-        <tbody>\${lotes.filter(x => x.disponivel > 0 || x.saidas > 0).map(({l,b,e,saidas,disponivel,idade}) => {
+        <tbody>${lotes.filter(x => x.disponivel > 0 || x.saidas > 0).map(({l,b,e,saidas,disponivel,idade}) => {
           let statusPag, corStatus;
           if (idade < 1) { statusPag = 'aguardando início'; corStatus = 'bg-gray-100 text-gray-600'; }
           else if (idade <= 12) { statusPag = 'pagando (mês ' + idade + '/12)'; corStatus = 'bg-green-100 text-green-800'; }
@@ -1526,14 +1580,14 @@ VIEWS.vendas = function() {
         const b = l ? byId('bancadas', l.bancada_id) : null;
         const e = b ? byId('estufas', b.estufa_id) : null;
         const c = byId('clientes', m.cliente_id);
-        return \`<tr class="border-t">
-          <td class="p-2">\${fmtDate(m.data)}</td>
-          <td>\${m.tipo==='saida_total'?'Total':'Parcial'}</td>
-          <td>\${escapeHtml(e?.nome||'?')} BC \${escapeHtml(b?.numero||'?')}</td>
-          <td class="text-right">\${fmtNum(m.qtd)}</td>
-          <td>\${escapeHtml(c?.nome||'-')}</td>
-          <td>\${escapeHtml(m.observacao||'')}</td>
-        </tr>\`;
+        return `<tr class="border-t">
+          <td class="p-2">${fmtDate(m.data)}</td>
+          <td>${m.tipo==='saida_total'?'Total':'Parcial'}</td>
+          <td>${escapeHtml(e?.nome||'?')} BC ${escapeHtml(b?.numero||'?')}</td>
+          <td class="text-right">${fmtNum(m.qtd)}</td>
+          <td>${escapeHtml(c?.nome||'-')}</td>
+          <td>${escapeHtml(m.observacao||'')}</td>
+        </tr>`;
       }).join('')}</tbody>
     </table></div>
   `;
@@ -1563,7 +1617,7 @@ window.novaSaida = function(loteId=null) {
       <div><label class="text-sm font-medium">Cliente (opcional)</label>
         <input id="sCliente" type="text" placeholder="Nome do cliente" class="w-full mt-1 px-3 py-2 border rounded"></div>
       <div><label class="text-sm font-medium">Data</label>
-        <input id="sData" type="date" required value="\${new Date().toISOString().slice(0,10)}" class="w-full mt-1 px-3 py-2 border rounded"></div>
+        <input id="sData" type="date" required value="${new Date().toISOString().slice(0,10)}" class="w-full mt-1 px-3 py-2 border rounded"></div>
       <div><label class="text-sm font-medium">Observação</label>
         <textarea id="sObs" rows="2" class="w-full mt-1 px-3 py-2 border rounded"></textarea></div>
       <div class="flex justify-end gap-2 pt-2">
@@ -1590,21 +1644,21 @@ VIEWS.alertas = function() {
   const list = lotesParaExame();
   $('#content').innerHTML = `
     <h2 class="text-2xl font-bold mb-4">⏰ Alertas — Mudas para exame</h2>
-    <p class="text-sm text-gray-600 mb-4">Lotes com mais de 50 dias desde o enxerto.</p>
+    <p class="text-sm text-gray-600 mb-4">Lotes com mais de 50 dias desde o enxerto. Cadastre a "data do enxerto" no lote para gerar alerta.</p>
     <div class="bg-white rounded-xl shadow overflow-x-auto"><table class="w-full text-sm">
       <thead class="bg-gray-50"><tr class="text-left"><th class="p-2">Estufa</th><th>BC</th><th>Qtd</th><th>Porta-enxerto</th><th>Variedade</th><th>Data enxerto</th><th class="text-right">Dias</th></tr></thead>
-      <tbody>${list.length===0?'<tr><td colspan="7" class="p-4 text-center text-gray-500">Nenhum alerta.</td></tr>':list.map(l => {
+      <tbody>${list.length===0?'<tr><td colspan="7" class="p-4 text-center text-gray-500">Nenhum alerta. Cadastre data do enxerto nos lotes.</td></tr>':list.map(l => {
         const b = byId('bancadas', l.bancada_id);
         const e = b ? byId('estufas', b.estufa_id) : null;
-        return \`<tr class="border-t hover:bg-orange-50">
-          <td class="p-2">\${escapeHtml(e?.nome||'?')}</td>
-          <td>\${escapeHtml(b?.numero||'?')}</td>
-          <td>\${fmtNum(l.qtd)}</td>
-          <td>\${escapeHtml(l.porta_enxerto||'-')}</td>
-          <td>\${escapeHtml(l.variedade||'-')}</td>
-          <td>\${fmtDate(l.data_enxerto)}</td>
-          <td class="text-right font-bold text-orange-700">\${l.diasDesdeEnxerto}d</td>
-        </tr>\`;
+        return `<tr class="border-t hover:bg-orange-50">
+          <td class="p-2">${escapeHtml(e?.nome||'?')}</td>
+          <td>${escapeHtml(b?.numero||'?')}</td>
+          <td>${fmtNum(l.qtd)}</td>
+          <td>${escapeHtml(l.porta_enxerto||'-')}</td>
+          <td>${escapeHtml(l.variedade||'-')}</td>
+          <td>${fmtDate(l.data_enxerto)}</td>
+          <td class="text-right font-bold text-orange-700">${l.diasDesdeEnxerto}d</td>
+        </tr>`;
       }).join('')}</tbody>
     </table></div>
   `;
@@ -1616,28 +1670,49 @@ VIEWS.estufas = function() {
       <h2 class="text-2xl font-bold">🏠 Estufas / Bancadas</h2>
       ${isAdmin()?'<button onclick="novaEstufa()" class="bg-green-700 text-white px-4 py-2 rounded">+ Nova estufa</button>':''}
     </div>
+    <p class="text-sm text-gray-600 mb-4">Gerencie estufas, funcionários padrão e veja as bancadas.</p>
     <div class="grid md:grid-cols-2 gap-4">
       ${STATE.data.estufas.map(e => {
         const bcs = STATE.data.bancadas.filter(b => b.estufa_id === e.id).sort((a,b) => a.numero.localeCompare(b.numero, undefined, {numeric:true}));
         const fp = (e.funcionarios_padrao||[]).map(id => byId('funcionarios', id)).filter(Boolean);
-        return \`<div class="bg-white rounded-xl shadow p-4">
+        return `<div class="bg-white rounded-xl shadow p-4">
           <div class="flex justify-between items-start">
             <div>
-              <h3 class="font-bold">\${escapeHtml(e.nome)}</h3>
-              <p class="text-xs text-gray-500">\${SITIO_LABEL[e.sitio]||e.sitio} · \${bcs.length} bancadas</p>
+              <h3 class="font-bold">${escapeHtml(e.nome)}</h3>
+              <p class="text-xs text-gray-500">${SITIO_LABEL[e.sitio]||e.sitio} · ${bcs.length} bancadas</p>
             </div>
-            \${isAdmin()?\`<div class="flex gap-2 text-xs">
-              <button onclick="gerenciarFuncs('\${e.id}')" class="text-blue-700 hover:underline">funcionários</button>
-              <button onclick="deletarEstufa('\${e.id}')" class="text-red-600 hover:underline">excluir</button>
-            </div>\`:''}
+            ${isAdmin()?`<div class="flex gap-2 text-xs">
+              <button onclick="gerenciarFuncs('${e.id}')" class="text-blue-700 hover:underline">funcionários</button>
+              <button onclick="deletarEstufa('${e.id}')" class="text-red-600 hover:underline">excluir</button>
+            </div>`:''}
+          </div>
+          <div class="mt-3 pb-2 border-b">
+            <p class="text-xs text-gray-500 mb-1">Funcionários desta estufa:</p>
+            ${fp.length === 0
+              ? '<p class="text-xs text-gray-400 italic">Nenhum cadastrado</p>'
+              : '<div class="flex flex-wrap gap-1">'+fp.map(f => '<span class="badge bg-blue-100 text-blue-800">'+escapeHtml(f.nome)+'</span>').join('')+'</div>'}
           </div>
           <div class="mt-3">
-            <div class="flex flex-wrap gap-1">\${bcs.map(b => {
-              const s = statusBancada(b);
-              return '<span class="badge ' + s.cor.replace('border-','').replace(/border-[a-z]+-\d+ ?/g,'') + '">BC ' + escapeHtml(b.numero) + '</span>';
-            }).join('')}</div>
+            <p class="text-xs text-gray-500 mb-1">Bancadas (<span class="inline-block w-2 h-2 bg-green-500 rounded-full"></span> ativa, <span class="inline-block w-2 h-2 bg-yellow-500 rounded-full"></span> vencendo, <span class="inline-block w-2 h-2 bg-red-500 rounded-full"></span> vencida, <span class="inline-block w-2 h-2 bg-gray-400 rounded-full"></span> vazia):</p>
+            <div class="flex flex-wrap gap-1">
+              ${bcs.map(b => {
+                const f = byId('funcionarios', b.funcionario_id);
+                const s = statusBancada(b);
+                return '<span class="badge '+s.cor.replace('border-','').replace(/border-[a-z]+-\d+ ?/g,'')+'" title="'+escapeHtml(f?.nome||'sem func.')+' — '+s.label+' '+s.detalhe+'">BC '+escapeHtml(b.numero)+'</span>';
+              }).join('')}
+              ${(() => {
+                // Slots não cadastrados
+                const numerosCadastrados = new Set(bcs.map(b => b.numero));
+                const total = e.num_bancadas || 24;
+                const slots = [];
+                for (let i = 1; i <= total; i++) {
+                  if (!numerosCadastrados.has(String(i))) slots.push(i);
+                }
+                return slots.length === 0 ? '' : slots.map(n => '<span class="badge bg-gray-100 text-gray-500" title="slot livre">BC '+n+'</span>').join('');
+              })()}
+            </div>
           </div>
-        </div>\`;
+        </div>`;
       }).join('')}
     </div>
   `;
@@ -1647,11 +1722,12 @@ window.gerenciarFuncs = function(estufaId) {
   const e = byId('estufas', estufaId);
   const atuais = new Set(e.funcionarios_padrao || []);
   openModal('Funcionários da '+e.nome, `
+    <p class="text-sm text-gray-600 mb-3">Marque os funcionários que trabalham nesta estufa.</p>
     <div class="space-y-2 max-h-80 overflow-y-auto border p-3 rounded">
       ${STATE.data.funcionarios.filter(f=>f.tipo==='por_muda').map(f => `
         <label class="flex items-center gap-2 hover:bg-gray-50 p-1 rounded cursor-pointer">
-          <input type="checkbox" data-funcid="${f.id}" \${atuais.has(f.id)?'checked':''} class="gerenciarFuncCB">
-          <span>\${escapeHtml(f.nome)}</span>
+          <input type="checkbox" data-funcid="${f.id}" ${atuais.has(f.id)?'checked':''} class="gerenciarFuncCB">
+          <span>${escapeHtml(f.nome)}</span>
         </label>
       `).join('')}
     </div>
@@ -1664,31 +1740,39 @@ window.gerenciarFuncs = function(estufaId) {
 window.salvarFuncsEstufa = async function(estufaId) {
   const ids = [...$$('.gerenciarFuncCB')].filter(cb => cb.checked).map(cb => cb.dataset.funcid);
   await DB.update('estufas', estufaId, { funcionarios_padrao: ids });
-  closeModal(); setView('estufas'); toast('Atualizado', 'success');
+  closeModal();
+  setView('estufas');
+  toast('Atualizado', 'success');
 };
 
 window.novaEstufa = function() {
-  openModal('Nova estufa', \`
+  openModal('Nova estufa', `
     <form id="eForm" class="space-y-3">
       <div><label class="text-sm font-medium">Nome</label><input id="eNome" type="text" required class="w-full mt-1 px-3 py-2 border rounded"></div>
       <div><label class="text-sm font-medium">Sítio</label>
         <select id="eSitio" required class="w-full mt-1 px-3 py-2 border rounded">
           <option value="sao_jose">São José</option><option value="bela_vista">Bela Vista</option><option value="santo_antonio">Santo Antônio</option>
         </select></div>
+      <div><label class="text-sm font-medium">Nº de bancadas</label><input id="eNum" type="number" min="1" value="24" class="w-full mt-1 px-3 py-2 border rounded"></div>
       <div class="flex justify-end gap-2 pt-2">
         <button type="button" onclick="closeModal()" class="px-4 py-2 border rounded">Cancelar</button>
         <button type="submit" class="px-4 py-2 bg-green-700 text-white rounded">Salvar</button>
       </div>
-    </form>\`);
+    </form>`);
   $('#eForm').addEventListener('submit', async e => {
     e.preventDefault();
-    await DB.insert('estufas', { nome: $('#eNome').value, sitio: $('#eSitio').value, num_bancadas: 24, funcionarios_padrao: [] });
-    closeModal(); setView('estufas');
+    await DB.insert('estufas', { nome: $('#eNome').value, sitio: $('#eSitio').value, num_bancadas: parseInt($('#eNum').value), funcionarios_padrao: [] });
+    closeModal();
+    setView('estufas');
   });
 };
 window.deletarEstufa = async function(id) {
-  if (!confirm('Excluir estufa?')) return;
-  await DB.remove('estufas', id); setView('estufas');
+  if (!confirm('Excluir estufa e todas as bancadas/lotes?')) return;
+  const bcs = STATE.data.bancadas.filter(b => b.estufa_id === id).map(b => b.id);
+  STATE.data.lotes = STATE.data.lotes.filter(l => !bcs.includes(l.bancada_id));
+  STATE.data.bancadas = STATE.data.bancadas.filter(b => b.estufa_id !== id);
+  await DB.remove('estufas', id);
+  setView('estufas');
 };
 
 VIEWS.funcionarios = function() {
@@ -1698,50 +1782,64 @@ VIEWS.funcionarios = function() {
       ${isAdmin()?'<button onclick="novoFunc()" class="bg-green-700 text-white px-4 py-2 rounded">+ Novo funcionário</button>':''}
     </div>
     <div class="bg-white rounded-xl shadow overflow-x-auto"><table class="w-full text-sm">
-      <thead class="bg-gray-50"><tr><th class="p-2 text-left">Nome</th><th class="p-2 text-left">Tipo</th><th class="p-2 text-right">Mudas</th>${isAdmin()?'<th></th>':''}</tr></thead>
+      <thead class="bg-gray-50"><tr class="text-left">
+        <th class="p-2">Nome</th><th>Tipo</th>
+        <th class="text-right">Lotes</th><th class="text-right">Mudas</th>
+        <th class="text-right">Salário fixo</th>
+        ${isAdmin()?'<th></th>':''}
+      </tr></thead>
       <tbody>${STATE.data.funcionarios.map(f => {
         const lts = STATE.data.lotes.filter(l => l.funcionario_id === f.id);
-        return \`<tr class="border-t">
-          <td class="p-2 font-medium">\${escapeHtml(f.nome)}</td>
-          <td class="p-2">\${f.tipo==='salario_fixo'?'Fixo':'Por muda'}</td>
-          <td class="p-2 text-right">\${fmtNum(lts.reduce((s,l)=>s+l.qtd,0))}</td>
-          \${isAdmin()?\`<td class="text-right p-2">
-            <button onclick="editarFunc('\${f.id}')" class="text-blue-700 text-xs">editar</button>
-            · <button onclick="deletarFunc('\${f.id}')" class="text-red-600 text-xs">excluir</button>
-          </td>\`:''}
-        </tr>\`;
+        const isFix = f.tipo === 'salario_fixo';
+        return `<tr class="border-t hover:bg-gray-50">
+          <td class="p-2 font-medium">${escapeHtml(f.nome)}</td>
+          <td><span class="badge ${isFix?'bg-gray-200 text-gray-800':'bg-green-100 text-green-800'}">${isFix?'Salário fixo':'Por muda'}</span></td>
+          <td class="text-right">${lts.length}</td>
+          <td class="text-right">${fmtNum(lts.reduce((s,l)=>s+l.qtd,0))}</td>
+          <td class="text-right font-mono">${isFix?fmtMoneyExato(f.salario_fixo):'-'}</td>
+          ${isAdmin()?`<td class="text-right">
+            <button onclick="editarFunc('${f.id}')" class="text-blue-700 text-xs hover:underline">editar</button>
+            · <button onclick="deletarFunc('${f.id}')" class="text-red-600 text-xs hover:underline">excluir</button>
+          </td>`:''}
+        </tr>`;
       }).join('')}</tbody>
     </table></div>
   `;
 };
-window.novoFunc = () => formFunc(null);
-window.editarFunc = id => formFunc(byId('funcionarios', id));
-window.deletarFunc = async id => { if (!confirm('Excluir?')) return; await DB.remove('funcionarios', id); setView('funcionarios'); };
 
 function formFunc(func) {
   const isNew = !func;
   func = func || { nome:'', tipo:'por_muda', salario_fixo:null };
-  openModal(isNew?'Novo':'Editar', \`
+  openModal(isNew?'Novo funcionário':'Editar funcionário', `
     <form id="fForm" class="space-y-3">
-      <div><label class="text-sm font-medium">Nome</label><input id="fNome" type="text" required value="\${escapeHtml(func.nome)}" class="w-full mt-1 px-3 py-2 border rounded"></div>
-      <div><label class="text-sm font-medium">Tipo</label>
+      <div><label class="text-sm font-medium">Nome</label><input id="fNome" type="text" required value="${escapeHtml(func.nome)}" class="w-full mt-1 px-3 py-2 border rounded"></div>
+      <div><label class="text-sm font-medium">Tipo de pagamento</label>
         <select id="fTipo" class="w-full mt-1 px-3 py-2 border rounded">
-          <option value="por_muda" \${func.tipo==='por_muda'?'selected':''}>Por muda</option>
-          <option value="salario_fixo" \${func.tipo==='salario_fixo'?'selected':''}>Salário fixo</option>
+          <option value="por_muda" ${func.tipo==='por_muda'?'selected':''}>Por muda</option>
+          <option value="salario_fixo" ${func.tipo==='salario_fixo'?'selected':''}>Salário fixo mensal</option>
         </select></div>
+      <div id="fSalDiv" class="${func.tipo==='salario_fixo'?'':'hidden'}">
+        <label class="text-sm font-medium">Valor do salário fixo (R$)</label>
+        <input id="fSal" type="number" step="0.01" value="${func.salario_fixo||''}" class="w-full mt-1 px-3 py-2 border rounded">
+      </div>
       <div class="flex justify-end gap-2 pt-2">
         <button type="button" onclick="closeModal()" class="px-4 py-2 border rounded">Cancelar</button>
         <button type="submit" class="px-4 py-2 bg-green-700 text-white rounded">Salvar</button>
       </div>
-    </form>\`);
+    </form>`);
+  $('#fTipo').addEventListener('change', e => $('#fSalDiv').classList.toggle('hidden', e.target.value !== 'salario_fixo'));
   $('#fForm').addEventListener('submit', async e => {
     e.preventDefault();
-    const payload = { nome: $('#fNome').value.trim(), tipo: $('#fTipo').value, salario_fixo: null };
+    const payload = { nome: $('#fNome').value.trim(), tipo: $('#fTipo').value, salario_fixo: $('#fTipo').value === 'salario_fixo' ? parseFloat($('#fSal').value)||0 : null };
     if (isNew) await DB.insert('funcionarios', payload);
     else await DB.update('funcionarios', func.id, payload);
-    closeModal(); setView('funcionarios');
+    closeModal();
+    setView('funcionarios');
   });
 }
+window.novoFunc = () => formFunc(null);
+window.editarFunc = id => formFunc(byId('funcionarios', id));
+window.deletarFunc = async id => { if (!confirm('Excluir?')) return; await DB.remove('funcionarios', id); setView('funcionarios'); };
 
 VIEWS.precos = function() {
   $('#content').innerHTML = `
@@ -1749,45 +1847,70 @@ VIEWS.precos = function() {
       <h2 class="text-2xl font-bold">💵 Preços por sítio</h2>
       ${isAdmin()?'<button onclick="novoPreco()" class="bg-green-700 text-white px-4 py-2 rounded">+ Novo preço</button>':''}
     </div>
+    <div class="bg-yellow-50 p-3 rounded text-sm mb-4">
+      <b>Como funciona:</b> cada preço tem uma <b>data de vigência</b>. Lotes plantados a partir dessa data usam o novo preço; lotes antigos mantêm o preço da época.
+    </div>
     <div class="bg-white rounded-xl shadow overflow-x-auto"><table class="w-full text-sm">
-      <thead class="bg-gray-50"><tr><th class="p-2 text-left">Sítio</th><th>Vigência</th><th class="text-right">Total</th><th class="text-right">Retenção</th>${isAdmin()?'<th></th>':''}</tr></thead>
-      <tbody>${STATE.data.precos_sitio.map(p => \`<tr class="border-t">
-        <td class="p-2">\${SITIO_LABEL[p.sitio]||p.sitio}</td><td>\${fmtDate(p.vigencia_inicio)}</td>
-        <td class="p-2 text-right">\${fmtMoneyExato(p.valor_total)}</td><td class="p-2 text-right">\${fmtMoneyExato(p.valor_final)}</td>
-        \${isAdmin()?\`<td class="p-2"><button onclick="deletarPreco('\${p.id}')" class="text-red-600 text-xs">excluir</button></td>\`:''}
-      </tr>\`).join('')}</tbody>
+      <thead class="bg-gray-50"><tr class="text-left">
+        <th class="p-2">Sítio</th><th>Vigência</th>
+        <th class="text-right">Total/muda</th><th class="text-right">Retenção</th>
+        <th class="text-right">Parcela mensal</th>
+        ${isAdmin()?'<th></th>':''}
+      </tr></thead>
+      <tbody>${STATE.data.precos_sitio.sort((a,b)=>a.sitio.localeCompare(b.sitio)||b.vigencia_inicio.localeCompare(a.vigencia_inicio)).map(p => {
+        const parc = (p.valor_total - p.valor_final) / 12;
+        return `<tr class="border-t">
+          <td class="p-2">${SITIO_LABEL[p.sitio]||p.sitio}</td>
+          <td>${fmtDate(p.vigencia_inicio)}</td>
+          <td class="text-right font-mono">${fmtMoneyExato(p.valor_total)}</td>
+          <td class="text-right font-mono">${fmtMoneyExato(p.valor_final)}</td>
+          <td class="text-right font-mono">${fmtMoneyExato(parc)}</td>
+          ${isAdmin()?`<td><button onclick="deletarPreco('${p.id}')" class="text-red-600 text-xs hover:underline">excluir</button></td>`:''}
+        </tr>`;
+      }).join('')}</tbody>
     </table></div>
   `;
 };
+
 window.novoPreco = function() {
-  openModal('Novo preço', \`
+  openModal('Novo preço', `
     <form id="pForm" class="space-y-3">
-      <div><label class="text-sm font-medium">Sítio</label><select id="pSitio" class="w-full mt-1 px-3 py-2 border rounded"><option value="sao_jose">São José</option></select></div>
+      <div><label class="text-sm font-medium">Sítio</label>
+        <select id="pSitio" required class="w-full mt-1 px-3 py-2 border rounded">
+          <option value="sao_jose">São José</option><option value="bela_vista">Bela Vista</option><option value="santo_antonio">Santo Antônio</option>
+        </select></div>
       <div class="grid grid-cols-2 gap-3">
-        <div><label class="text-sm font-medium">Total</label><input id="pTot" type="number" step="0.01" required class="w-full mt-1 px-3 py-2 border rounded"></div>
-        <div><label class="text-sm font-medium">Retenção</label><input id="pFin" type="number" step="0.01" value="0.15" class="w-full mt-1 px-3 py-2 border rounded"></div>
+        <div><label class="text-sm font-medium">Valor total/muda</label><input id="pTot" type="number" step="0.01" required class="w-full mt-1 px-3 py-2 border rounded"></div>
+        <div><label class="text-sm font-medium">Retenção</label><input id="pFin" type="number" step="0.01" value="0.15" required class="w-full mt-1 px-3 py-2 border rounded"></div>
       </div>
-      <div><label class="text-sm font-medium">Vigência</label><input id="pVig" type="date" required class="w-full mt-1 px-3 py-2 border rounded"></div>
+      <div><label class="text-sm font-medium">Vigência a partir de</label><input id="pVig" type="date" required class="w-full mt-1 px-3 py-2 border rounded"></div>
       <div class="flex justify-end gap-2 pt-2">
         <button type="button" onclick="closeModal()" class="px-4 py-2 border rounded">Cancelar</button>
         <button type="submit" class="px-4 py-2 bg-green-700 text-white rounded">Salvar</button>
       </div>
-    </form>\`);
+    </form>`);
   $('#pForm').addEventListener('submit', async e => {
     e.preventDefault();
     await DB.insert('precos_sitio', { sitio: $('#pSitio').value, valor_total: parseFloat($('#pTot').value), valor_final: parseFloat($('#pFin').value), vigencia_inicio: $('#pVig').value });
-    closeModal(); setView('precos');
+    closeModal();
+    setView('precos');
   });
 };
 window.deletarPreco = async id => { if (!confirm('Excluir?')) return; await DB.remove('precos_sitio', id); setView('precos'); };
 
 // ============================================================
-// PLAQUINHAS
+// PLAQUINHAS / ETIQUETAS (impressão MAPA)
 // ============================================================
 function getCfgPlaq() {
   let cfg = {};
   try { cfg = JSON.parse(localStorage.getItem('estufas_cfg_plaq') || '{}'); } catch(e){}
-  return Object.assign({ produtor: 'José Inacio Rosa', propriedade: 'Sitio São José', municipio: 'Monte Azul Paulista', processo: '20251257', lote: '0' }, cfg);
+  return Object.assign({
+    produtor: 'José Inacio Rosa',
+    propriedade: 'Sitio São José',
+    municipio: 'Monte Azul Paulista',
+    processo: '20251257',
+    lote: '0'
+  }, cfg);
 }
 function setCfgPlaq(cfg) { localStorage.setItem('estufas_cfg_plaq', JSON.stringify(cfg)); }
 
@@ -1795,49 +1918,162 @@ VIEWS.plaquinhas = function() {
   STATE.plaqEst = STATE.plaqEst || (STATE.data.estufas[0]?.id || '');
   STATE.plaqSel = STATE.plaqSel || {};
   const e = byId('estufas', STATE.plaqEst);
-  const bcs = e ? STATE.data.bancadas.filter(b => b.estufa_id === e.id).sort((a,b) => a.numero.localeCompare(b.numero, undefined, {numeric:true})) : [];
+  const bcs = e ? STATE.data.bancadas.filter(b => b.estufa_id === e.id)
+    .sort((a,b) => a.numero.localeCompare(b.numero, undefined, {numeric:true})) : [];
   const cfg = getCfgPlaq();
   $('#content').innerHTML = `
     <h2 class="text-2xl font-bold mb-1 no-print">🏷️ Plaquinhas / Etiquetas</h2>
+    <p class="text-sm text-gray-500 mb-4 no-print">Selecione estufa e bancadas para gerar etiquetas no formato MAPA (croqui de produção). Imprime 2 por linha.</p>
+
     <div class="bg-white p-4 rounded-xl shadow mb-4 no-print">
+      <h3 class="font-bold mb-3 text-sm">Dados fixos da propriedade</h3>
       <div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
         <div><label class="text-xs text-gray-500">Produtor</label><input id="pPdr" type="text" value="${escapeHtml(cfg.produtor)}" class="w-full mt-1 px-3 py-2 border rounded"></div>
         <div><label class="text-xs text-gray-500">Propriedade</label><input id="pPrp" type="text" value="${escapeHtml(cfg.propriedade)}" class="w-full mt-1 px-3 py-2 border rounded"></div>
-        <div class="flex items-end"><button onclick="salvarCfgPlaq()" class="bg-gray-100 px-4 py-2 rounded text-sm">Salvar</button></div>
+        <div><label class="text-xs text-gray-500">Município</label><input id="pMun" type="text" value="${escapeHtml(cfg.municipio)}" class="w-full mt-1 px-3 py-2 border rounded"></div>
+        <div><label class="text-xs text-gray-500">Nº Processo</label><input id="pPrc" type="text" value="${escapeHtml(cfg.processo)}" class="w-full mt-1 px-3 py-2 border rounded"></div>
+        <div><label class="text-xs text-gray-500">Lote</label><input id="pLot" type="text" value="${escapeHtml(cfg.lote)}" class="w-full mt-1 px-3 py-2 border rounded"></div>
+        <div class="flex items-end"><button onclick="salvarCfgPlaq()" class="bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded text-sm">Salvar dados fixos</button></div>
       </div>
     </div>
+
     <div class="bg-white p-4 rounded-xl shadow mb-4 no-print">
-      <select onchange="STATE.plaqEst=this.value;STATE.plaqSel={};setView('plaquinhas')" class="px-3 py-2 border rounded text-sm">
-        ${STATE.data.estufas.map(x => '<option value="'+x.id+'"'+(x.id===STATE.plaqEst?' selected':'')+'>'+escapeHtml(x.nome)+'</option>').join('')}
-      </select>
-      <button onclick="gerarPlaquinhas()" class="ml-2 bg-green-700 text-white px-4 py-2 rounded text-sm">Gerar</button>
-      <div class="grid grid-cols-2 gap-2 mt-4">
-        ${bcs.map(b => `<label class="flex items-center gap-2 p-2 border rounded">
-          <input type="checkbox" ${STATE.plaqSel[b.id]?'checked':''} onchange="STATE.plaqSel['${b.id}']=this.checked;setView('plaquinhas')">
-          <span class="text-sm">BC ${escapeHtml(b.numero)}</span>
-        </label>`).join('')}
+      <div class="flex flex-wrap items-center gap-3 mb-3">
+        <div>
+          <label class="text-xs text-gray-500 block">Estufa</label>
+          <select onchange="STATE.plaqEst=this.value;STATE.plaqSel={};setView('plaquinhas')" class="px-3 py-2 border rounded text-sm">
+            ${STATE.data.estufas.map(x => '<option value="'+x.id+'"'+(x.id===STATE.plaqEst?' selected':'')+'>'+escapeHtml(x.nome)+'</option>').join('')}
+          </select>
+        </div>
+        <div class="flex-1"></div>
+        <button onclick="plaqMarcarTodas(true)" class="bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded text-sm">✓ Marcar todas</button>
+        <button onclick="plaqMarcarTodas(false)" class="bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded text-sm">✗ Desmarcar</button>
+        <button onclick="gerarPlaquinhas()" class="bg-green-700 text-white px-4 py-2 rounded text-sm">🏷️ Gerar plaquinhas</button>
+      </div>
+
+      <p class="text-xs text-gray-500 mb-2">Marque as bancadas que vão gerar etiqueta. Cada uma pode ter seu próprio Nº de Processo (deixe em branco para usar o padrão da estufa):</p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+        ${bcs.map(b => {
+          const lotes = STATE.data.lotes.filter(l => l.bancada_id === b.id);
+          const tem = lotes.length > 0;
+          const procAtual = STATE.plaqProc?.[b.id] ?? (b.processo || '');
+          return `<label class="flex items-start gap-2 p-2 border rounded ${tem?'hover:bg-green-50':'opacity-50'} ${STATE.plaqSel[b.id]?'bg-green-50 border-green-400':''}">
+            <input type="checkbox" ${tem?'':'disabled'} ${STATE.plaqSel[b.id]?'checked':''} onchange="STATE.plaqSel['${b.id}']=this.checked;setView('plaquinhas')" class="mt-1 cursor-pointer">
+            <div class="flex-1 text-sm">
+              <div class="font-mono font-bold">BC ${escapeHtml(b.numero)}</div>
+              ${lotes.map(l => '<div class="text-xs text-gray-600">'+escapeHtml(l.porta_enxerto||'-')+' / '+escapeHtml(l.variedade||'sem enxerto')+' · '+fmtNum(l.qtd)+'</div>').join('')}
+              ${!tem?'<div class="text-xs text-gray-400 italic">sem lote</div>':''}
+              ${tem ? `<div class="mt-1 flex items-center gap-1"><span class="text-xs text-gray-500">Nº Proc.:</span><input type="text" value="${escapeHtml(procAtual)}" placeholder="${escapeHtml(cfg.processo)}" onchange="salvarProcBancada('${b.id}', this.value)" class="flex-1 px-1 py-0.5 text-xs border rounded font-mono" onclick="event.preventDefault();event.stopPropagation()"></div>` : ''}
+            </div>
+          </label>`;
+        }).join('')}
       </div>
     </div>
+
     <div id="plaqResult"></div>
   `;
 };
-window.salvarCfgPlaq = function() {
-  setCfgPlaq({ produtor: $('#pPdr').value, propriedade: $('#pPrp').value, municipio: $('#pMun').value, processo: $('#pPrc').value, lote: $('#pLot').value });
-  toast('Salvo', 'success');
-};
-window.gerarPlaquinhas = function() {
-  const bancadasSel = Object.keys(STATE.plaqSel).filter(id => STATE.plaqSel[id]);
-  if (bancadasSel.length === 0) { toast('Selecione bancadas', 'error'); return; }
-  $('#plaqResult').innerHTML = '<div class="p-4 bg-white rounded shadow">Etiquetas geradas (veja no console ou imprima).</div>';
+
+window.salvarProcBancada = async function(bancadaId, valor) {
+  STATE.plaqProc = STATE.plaqProc || {};
+  STATE.plaqProc[bancadaId] = valor;
+  // Persiste no banco também (assim fica salvo entre sessões)
+  try { await DB.update('bancadas', bancadaId, { processo: valor || null }); } catch(e) { console.error(e); }
+  toast('Nº Processo da bancada salvo', 'success');
 };
 
-// ============================================================
-// IMPORTAR
-// ============================================================
+window.salvarCfgPlaq = function() {
+  setCfgPlaq({
+    produtor: $('#pPdr').value, propriedade: $('#pPrp').value, municipio: $('#pMun').value,
+    processo: $('#pPrc').value, lote: $('#pLot').value
+  });
+  toast('Dados salvos', 'success');
+};
+
+window.plaqMarcarTodas = function(marcar) {
+  const e = byId('estufas', STATE.plaqEst);
+  if (!e) return;
+  const bcs = STATE.data.bancadas.filter(b => b.estufa_id === e.id);
+  STATE.plaqSel = STATE.plaqSel || {};
+  for (const b of bcs) {
+    const tem = STATE.data.lotes.some(l => l.bancada_id === b.id);
+    if (tem) STATE.plaqSel[b.id] = marcar;
+  }
+  setView('plaquinhas');
+};
+
+window.gerarPlaquinhas = function() {
+  const cfg = {
+    produtor: $('#pPdr').value, propriedade: $('#pPrp').value, municipio: $('#pMun').value,
+    processo: $('#pPrc').value, lote: $('#pLot').value
+  };
+  setCfgPlaq(cfg);
+  const e = byId('estufas', STATE.plaqEst);
+  const bancadasSel = Object.keys(STATE.plaqSel).filter(id => STATE.plaqSel[id]);
+  if (bancadasSel.length === 0) { toast('Selecione ao menos 1 bancada', 'error'); return; }
+  // Para cada bancada selecionada, gera UMA etiqueta por lote
+  const etiquetas = [];
+  for (const bid of bancadasSel) {
+    const b = byId('bancadas', bid);
+    if (!b) continue;
+    const lotes = STATE.data.lotes.filter(l => l.bancada_id === bid);
+    for (const l of lotes) etiquetas.push({ estufa:e, bancada:b, lote:l });
+  }
+  if (etiquetas.length === 0) { toast('Bancadas sem lotes', 'error'); return; }
+
+  function renderEtiqueta(et) {
+    const l = et.lote;
+    // Cada bancada pode ter seu próprio Nº Processo (override do padrão)
+    const procBancada = (STATE.plaqProc?.[et.bancada.id]) || et.bancada.processo || cfg.processo;
+    return `
+      <div class="border-2 border-black p-2 text-xs" style="page-break-inside:avoid">
+        <div class="grid grid-cols-[1fr_60px] gap-1">
+          <div class="space-y-1">
+            <div><b>Produtor:</b> ${escapeHtml(cfg.produtor)}</div>
+            <div><b>Propriedade:</b> ${escapeHtml(cfg.propriedade)}</div>
+            <div class="flex gap-2"><span><b>Nº Processo:</b> ${escapeHtml(procBancada)}</span><span><b>Lote:</b> ${escapeHtml(cfg.lote)}</span></div>
+            <div class="flex gap-2"><span><b>Bancada:</b> ${escapeHtml(et.bancada.numero)}</span><span><b>Quantidade:</b> ${fmtNum(l.qtd)}</span></div>
+            <div class="border-t pt-1 mt-1"><b>Porta enxerto:</b> <span class="float-right text-[10px]"><b>Data plantio:</b> ${fmtDate(l.data_plantio)}</span></div>
+            <div class="pl-3"><b>Espécie:</b> ${escapeHtml((l.porta_enxerto||'').split(' ')[0] || '-')}</div>
+            <div class="pl-3"><b>Cultivar:</b> ${escapeHtml(l.porta_enxerto||'-')}</div>
+            <div class="border-t pt-1 mt-1"><b>Enxertia:</b> <span class="float-right text-[10px]"><b>Data enxertia:</b> ${fmtDate(l.data_enxerto)}</span></div>
+            <div class="pl-3"><b>Espécie:</b> ${escapeHtml(l.variedade ? 'Laranja' : '—')}</div>
+            <div class="pl-3"><b>Cultivar:</b> ${escapeHtml(l.variedade || 'sem enxerto')}</div>
+          </div>
+          <div class="flex flex-col items-center justify-center bg-gray-100 border border-gray-400 rounded p-1">
+            <div class="text-[8px] font-bold">ESTUFA</div>
+            <div class="text-[8px]">N°</div>
+            <div class="text-3xl font-black">${escapeHtml(et.estufa.nome.replace(/[^0-9]/g,'') || '?')}</div>
+            <div class="text-[8px] mt-1">BC</div>
+            <div class="text-xl font-bold">${escapeHtml(et.bancada.numero)}</div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  $('#plaqResult').innerHTML = `
+    <div class="mb-3 no-print flex items-center justify-between bg-blue-50 border border-blue-200 p-3 rounded">
+      <span class="text-sm"><b>${etiquetas.length}</b> etiquetas geradas. Confira e clique em imprimir.</span>
+      <button onclick="window.print()" class="bg-green-700 text-white px-4 py-2 rounded text-sm">🖨️ Imprimir</button>
+    </div>
+    <div class="bg-white p-4 rounded-xl shadow print-area">
+      <div class="text-center mb-3 print-area">
+        <h3 class="font-bold">PLANO DE PRODUÇÃO — ${escapeHtml(cfg.propriedade)}</h3>
+        <p class="text-xs text-gray-600">${escapeHtml(cfg.municipio)} · Nº Processo ${escapeHtml(cfg.processo)} · Estufa ${escapeHtml(e.nome)}</p>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        ${etiquetas.map(renderEtiqueta).join('')}
+      </div>
+    </div>
+  `;
+  window.scrollTo({ top: $('#plaqResult').offsetTop, behavior: 'smooth' });
+};
+
 VIEWS.importar = function() {
   $('#content').innerHTML = `
     <h2 class="text-2xl font-bold mb-4">📤 Importar Excel</h2>
     <div class="bg-white p-4 rounded-xl shadow mb-4">
+      <p class="text-sm text-gray-600 mb-3">Selecione um arquivo .xlsx, .xls ou .ods.</p>
       <input type="file" id="impFile" accept=".xlsx,.xls,.ods,.csv" class="block">
       <div id="impSheets" class="mt-4"></div>
       <div id="impMap" class="mt-4"></div>
@@ -1846,23 +2082,86 @@ VIEWS.importar = function() {
   `;
   let workbook = null;
   $('#impFile').addEventListener('change', async ev => {
-    const file = ev.target.files[0]; if (!file) return;
+    const file = ev.target.files[0];
+    if (!file) return;
     const buf = await file.arrayBuffer();
     workbook = XLSX.read(buf, { type:'array', cellDates: true });
-    $('#impSheets').innerHTML = \`<select id="impSheet" class="px-3 py-2 border rounded">
-      \${workbook.SheetNames.map(s => '<option>'+escapeHtml(s)+'</option>').join('')}
-    </select><button id="impLoadSheet" class="ml-2 bg-green-700 text-white px-4 py-2 rounded">Carregar</button>\`;
+    $('#impSheets').innerHTML = `
+      <label class="text-sm font-medium">Aba</label>
+      <select id="impSheet" class="px-3 py-2 border rounded ml-2">
+        ${workbook.SheetNames.map(s => '<option>'+escapeHtml(s)+'</option>').join('')}
+      </select>
+      <button id="impLoadSheet" class="ml-2 bg-green-700 text-white px-4 py-2 rounded">Carregar</button>
+    `;
     $('#impLoadSheet').onclick = () => loadSheet(workbook);
   });
+
   function loadSheet(wb) {
     const sheet = wb.Sheets[$('#impSheet').value];
     const json = XLSX.utils.sheet_to_json(sheet, { header:1, defval:'' });
-    const headers = json[0]; const rows = json.slice(1);
-    $('#impMap').innerHTML = \`<button id="impGo" class="mt-3 bg-green-700 text-white px-4 py-2 rounded">Importar</button>\`;
+    const headerRow = json.findIndex(r => r.some(c => /banca|bancada|qtd|quantidade/i.test(String(c))));
+    const headers = headerRow >= 0 ? json[headerRow] : json[0];
+    const rows = json.slice(headerRow+1);
+    function guess(key, h) {
+      const s = String(h||'').toLowerCase();
+      return ({bc:/bc|banca|bancada/.test(s),qtd:/qtd|quant/.test(s),porta:/porta/.test(s),var:/vari/.test(s),plantio:/plantio|data/.test(s),nome:/nome|funcion/.test(s)})[key];
+    }
+    $('#impMap').innerHTML = `
+      <h4 class="font-bold mb-2">Mapear colunas</h4>
+      <div class="grid grid-cols-2 gap-2 text-sm">
+        ${[['bc','Bancada'],['qtd','Quantidade'],['porta','Porta-enxerto'],['var','Variedade'],['plantio','Plantio'],['nome','Funcionário']].map(([k,lbl])=>`
+          <div><label>${lbl}</label>
+            <select id="map_${k}" class="w-full px-2 py-1 border rounded">
+              <option value="-1">— ignorar —</option>
+              ${headers.map((h,i)=>'<option value="'+i+'"'+(guess(k,h)?' selected':'')+'>'+escapeHtml(String(h))+'</option>').join('')}
+            </select></div>
+        `).join('')}
+      </div>
+      <div class="mt-3 grid grid-cols-2 gap-2 text-sm">
+        <div><label>Estufa destino</label>
+          <select id="impEst" class="w-full px-2 py-1 border rounded">
+            ${STATE.data.estufas.map(e=>'<option value="'+e.id+'">'+escapeHtml(e.nome)+'</option>').join('')}
+          </select></div>
+        <div><label>Funcionário padrão</label>
+          <select id="impFunc" class="w-full px-2 py-1 border rounded">
+            <option value="">—</option>
+            ${STATE.data.funcionarios.map(f=>'<option value="'+f.id+'">'+escapeHtml(f.nome)+'</option>').join('')}
+          </select></div>
+      </div>
+      <button id="impGo" class="mt-3 bg-green-700 text-white px-4 py-2 rounded">Importar lotes</button>
+    `;
     $('#impGo').onclick = () => doImport(rows);
   }
+
   async function doImport(rows) {
-    toast('Importação concluída (simulada)', 'success');
+    const map = {};
+    ['bc','qtd','porta','var','plantio','nome'].forEach(k => map[k] = parseInt($('#map_'+k).value));
+    const estufaId = $('#impEst').value;
+    const funcDefault = $('#impFunc').value;
+    let ok=0, skip=0;
+    for (const r of rows) {
+      const bc = String(r[map.bc]||'').trim();
+      const qtd = parseInt(r[map.qtd]) || 0;
+      if (!bc || qtd <= 0) { skip++; continue; }
+      let plantio = r[map.plantio];
+      if (plantio instanceof Date) plantio = plantio.toISOString().slice(0,10);
+      else if (typeof plantio === 'number') plantio = new Date(Math.round((plantio - 25569) * 86400 * 1000)).toISOString().slice(0,10);
+      else plantio = String(plantio||'');
+      if (!/^\d{4}-\d{2}-\d{2}/.test(plantio)) { skip++; continue; }
+      const nomeFunc = String(r[map.nome]||'').trim();
+      let funcId = funcDefault || null;
+      if (nomeFunc) {
+        let f = STATE.data.funcionarios.find(x => x.nome.toLowerCase() === nomeFunc.toLowerCase());
+        if (!f) f = await DB.insert('funcionarios', { nome:nomeFunc, tipo:'por_muda', salario_fixo:null });
+        funcId = f.id;
+      }
+      let banc = STATE.data.bancadas.find(b => b.estufa_id === estufaId && b.numero === bc);
+      if (!banc) banc = await DB.insert('bancadas', { estufa_id:estufaId, numero:bc, funcionario_id:funcId });
+      await DB.insert('lotes', { bancada_id:banc.id, funcionario_id:funcId, qtd, porta_enxerto: String(r[map.porta]||'').trim() || null, variedade: String(r[map.var]||'').trim() || null, tipo:'muda_normal', data_plantio:plantio.slice(0,10), data_enxerto:null });
+      ok++;
+    }
+    $('#impResult').innerHTML = '<div class="bg-green-50 p-3 rounded text-sm"><b>'+ok+'</b> importados, <b>'+skip+'</b> ignorados.</div>';
+    toast('Importação OK', 'success');
   }
 };
 
@@ -1900,7 +2199,9 @@ $('#logoutBtn').addEventListener('click', doLogout);
 
 $('#resetBtn').addEventListener('click', async () => {
   if (!confirm('Recarregar TODOS os dados da planilha?')) return;
-  for (const k of Object.keys(localStorage)) { if (k.startsWith('estufas_demo_v')) localStorage.removeItem(k); }
+  for (const k of Object.keys(localStorage)) {
+    if (k.startsWith('estufas_demo_v')) localStorage.removeItem(k);
+  }
   toast('Recarregando...', 'success');
   setTimeout(() => location.reload(), 600);
 });
@@ -1910,12 +2211,14 @@ $('#cfgBtn').addEventListener('click', () => {
   $('#cfgScreen').classList.remove('hidden');
   let cfg = {};
   try { cfg = JSON.parse(localStorage.getItem('estufas_supabase_cfg') || '{}'); } catch(e) {}
-  $('#cfgUrl').value = cfg.url || ''; $('#cfgKey').value = cfg.key || '';
+  $('#cfgUrl').value = cfg.url || '';
+  $('#cfgKey').value = cfg.key || '';
 });
 
 $('#cfgSave').addEventListener('click', () => {
   const url = $('#cfgUrl').value.trim(), key = $('#cfgKey').value.trim();
   if (!url || !key) { toast('Preencha URL e key', 'error'); return; }
+  if (typeof supabase === 'undefined') { toast('Supabase não carregou', 'error'); return; }
   localStorage.setItem('estufas_supabase_cfg', JSON.stringify({ url, key }));
   STATE.supa = supabase.createClient(url, key);
   STATE.mode = 'supabase';
