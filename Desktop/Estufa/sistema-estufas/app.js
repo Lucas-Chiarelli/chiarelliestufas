@@ -713,7 +713,7 @@ VIEWS.lotes = function() {
               '<td>' + idade + 'm</td>' +
               '<td>' + escapeHtml(fu?.nome||'-') + '</td>' +
               '<td>' + status + '</td>' +
-              (isAdmin() ? '<td><button onclick="editarLote(' + JSON.stringify(l.id) + ')" class="text-blue-700 text-xs hover:underline">editar</button> · <button onclick="deletarLote(' + JSON.stringify(l.id) + ')" class="text-red-700 text-xs hover:underline">excluir</button></td>' : '') +
+              (isAdmin() ? '<td><button onclick="editarLote(\'' + l.id + '\')" class="text-blue-700 text-xs hover:underline">editar</button> · <button onclick="deletarLote(\'' + l.id + '\')" class="text-red-700 text-xs hover:underline">excluir</button></td>' : '') +
               '</tr>';
           }).join('')}
         </tbody>
@@ -1629,7 +1629,7 @@ VIEWS.estoque = function() {
             '<td class="text-right font-bold ' + (disponivel===0?'text-gray-400':'text-green-700') + '">' + fmtNum(disponivel) + '</td>' +
             '<td class="text-center text-xs">' + idade + 'm</td>' +
             '<td class="text-center"><span class="badge ' + corStatus + '">' + statusPag + '</span></td>' +
-            (isAdmin() ? '<td class="text-center">' + (disponivel>0?('<button onclick="novaSaida(' + JSON.stringify(l.id) + ')" class="bg-blue-600 hover:bg-blue-700 text-white text-xs px-2 py-1 rounded">📤 Vender</button>'):'<span class="text-xs text-gray-400">esgotado</span>') + '</td>' : '') +
+            (isAdmin() ? '<td class="text-center">' + (disponivel>0?('<button onclick="novaSaida(\'' + l.id + '\')" class="bg-blue-600 hover:bg-blue-700 text-white text-xs px-2 py-1 rounded">📤 Vender</button>'):'<span class="text-xs text-gray-400">esgotado</span>') + '</td>' : '') +
             '</tr>';
         }).join('')}</tbody>
       </table>
