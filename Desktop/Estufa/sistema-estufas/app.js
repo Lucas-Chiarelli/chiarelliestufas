@@ -607,12 +607,83 @@ VIEWS.vencidos = function() {
 // LOTES
 // ============================================================
 VIEWS.lotes = function() {
-  const lotes = STATE.data.lotes.slice().sort((a,b) => b.data_plantio.localeCompare(a.data_plantio));
+  STATE.lotesFiltro = STATE.lotesFiltro || { estufa:'', funcionario:'', porta:'', status:'' };
+  const f = STATE.lotesFiltro;
+  let lotes = STATE.data.lotes.slice();
+  // Aplica filtros
+  if (f.estufa) {
+    const bcsDaEstufa = new Set(STATE.data.bancadas.filter(b => b.estufa_id === f.estufa).map(b => b.id));
+    lotes = lotes.filter(l => bcsDaEstufa.has(l.bancada_id));
+  }
+  if (f.funcionario) lotes = lotes.filter(l => l.funcionario_id === f.funcionario);
+  if (f.porta) lotes = lotes.filter(l => (l.porta_enxerto||'').toLowerCase().includes(f.porta.toLowerCase()));
+  if (f.status) {
+    const today = new Date();
+    lotes = lotes.filter(l => {
+      const idd = idadeMeses(l.data_plantio, today);
+      if (f.status === 'ativo') return idd >= 1 && idd <= 11;
+      if (f.status === 'ultima') return idd === 12;
+      if (f.status === 'retencao') return idd === 13;
+      if (f.status === 'vencido') return idd > 13;
+      return true;
+    });
+  }
+  lotes.sort((a,b) => {
+    // Se filtrou por estufa, ordena por bancada numérica
+    if (f.estufa) {
+      const ba = byId('bancadas', a.bancada_id);
+      const bb = byId('bancadas', b.bancada_id);
+      return (ba?.numero||'').localeCompare(bb?.numero||'', undefined, {numeric:true});
+    }
+    return b.data_plantio.localeCompare(a.data_plantio);
+  });
+
+  const estSel = f.estufa ? byId('estufas', f.estufa) : null;
+  const totalMudas = lotes.reduce((s,l) => s + l.qtd, 0);
+
   $('#content').innerHTML = `
     <div class="flex items-center justify-between mb-4">
-      <h2 class="text-2xl font-bold">Lotes / Plantios</h2>
+      <h2 class="text-2xl font-bold">🌿 Lotes / Plantios ${estSel?'<span class="text-sm text-gray-500 font-normal">— '+escapeHtml(estSel.nome)+'</span>':''}</h2>
       ${isAdmin()?'<button onclick="novoLote()" class="bg-green-700 text-white px-4 py-2 rounded">+ Novo lote</button>':''}
     </div>
+
+    <div class="bg-white p-4 rounded-xl shadow mb-4">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-3 text-sm">
+        <div>
+          <label class="text-xs text-gray-500 uppercase">Estufa</label>
+          <select onchange="STATE.lotesFiltro.estufa=this.value;setView('lotes')" class="w-full mt-1 px-3 py-2 border rounded">
+            <option value="">— todas —</option>
+            ${STATE.data.estufas.map(e => '<option value="'+e.id+'"'+(e.id===f.estufa?' selected':'')+'>'+escapeHtml(e.nome)+'</option>').join('')}
+          </select>
+        </div>
+        <div>
+          <label class="text-xs text-gray-500 uppercase">Funcionário</label>
+          <select onchange="STATE.lotesFiltro.funcionario=this.value;setView('lotes')" class="w-full mt-1 px-3 py-2 border rounded">
+            <option value="">— todos —</option>
+            ${STATE.data.funcionarios.map(fu => '<option value="'+fu.id+'"'+(fu.id===f.funcionario?' selected':'')+'>'+escapeHtml(fu.nome)+'</option>').join('')}
+          </select>
+        </div>
+        <div>
+          <label class="text-xs text-gray-500 uppercase">Porta-enxerto</label>
+          <input type="text" value="${escapeHtml(f.porta)}" onchange="STATE.lotesFiltro.porta=this.value;setView('lotes')" placeholder="ex: Citrumelo" class="w-full mt-1 px-3 py-2 border rounded">
+        </div>
+        <div>
+          <label class="text-xs text-gray-500 uppercase">Status</label>
+          <select onchange="STATE.lotesFiltro.status=this.value;setView('lotes')" class="w-full mt-1 px-3 py-2 border rounded">
+            <option value="">— todos —</option>
+            <option value="ativo" ${f.status==='ativo'?'selected':''}>Ativo (1-11m)</option>
+            <option value="ultima" ${f.status==='ultima'?'selected':''}>Última parcela (12m)</option>
+            <option value="retencao" ${f.status==='retencao'?'selected':''}>Retenção (13m)</option>
+            <option value="vencido" ${f.status==='vencido'?'selected':''}>Vencido (>13m)</option>
+          </select>
+        </div>
+      </div>
+      <div class="mt-3 flex items-center gap-3 text-sm">
+        <button onclick="STATE.lotesFiltro={estufa:'',funcionario:'',porta:'',status:''};setView('lotes')" class="bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-xs">✗ Limpar filtros</button>
+        <span class="text-gray-600"><b>${lotes.length}</b> lote(s) · <b>${fmtNum(totalMudas)}</b> mudas</span>
+      </div>
+    </div>
+
     <div class="bg-white rounded-xl shadow overflow-x-auto">
       <table class="w-full text-sm">
         <thead class="bg-gray-50">
@@ -623,27 +694,27 @@ VIEWS.lotes = function() {
           </tr>
         </thead>
         <tbody>
-          ${lotes.map(l => {
+          ${lotes.length === 0 ? '<tr><td colspan="10" class="p-6 text-center text-gray-500">Nenhum lote encontrado com esses filtros.</td></tr>' : lotes.map(l => {
             const b = byId('bancadas', l.bancada_id);
             const e = b ? byId('estufas', b.estufa_id) : null;
-            const f = byId('funcionarios', l.funcionario_id);
+            const fu = byId('funcionarios', l.funcionario_id);
             const idade = idadeMeses(l.data_plantio, new Date());
-            let status = `<span class="badge bg-green-100 text-green-800">${idade}m ativo</span>`;
-            if (idade === 12) status = `<span class="badge bg-yellow-100 text-yellow-800">${idade}m última parcela</span>`;
-            if (idade === 13) status = `<span class="badge bg-orange-100 text-orange-800">${idade}m retenção</span>`;
-            if (idade > 13) status = `<span class="badge bg-red-100 text-red-800">${idade}m vencido</span>`;
-            return `<tr class="border-t hover:bg-gray-50">
-              <td class="p-2">${escapeHtml(e?.nome||'?')}</td>
-              <td>${escapeHtml(b?.numero||'?')}</td>
-              <td>${fmtNum(l.qtd)}</td>
-              <td>${escapeHtml(l.porta_enxerto||'-')}</td>
-              <td>${escapeHtml(l.variedade||'-')}</td>
-              <td>${fmtDate(l.data_plantio)}</td>
-              <td>${idade}m</td>
-              <td>${escapeHtml(f?.nome||'-')}</td>
-              <td>${status}</td>
-              ${isAdmin()?`<td><button onclick="editarLote('${l.id}')" class="text-blue-700 text-xs hover:underline">editar</button> · <button onclick="deletarLote('${l.id}')" class="text-red-700 text-xs hover:underline">excluir</button></td>`:''}
-            </tr>`;
+            let status = '<span class="badge bg-green-100 text-green-800">' + idade + 'm ativo</span>';
+            if (idade === 12) status = '<span class="badge bg-yellow-100 text-yellow-800">' + idade + 'm última parcela</span>';
+            if (idade === 13) status = '<span class="badge bg-orange-100 text-orange-800">' + idade + 'm retenção</span>';
+            if (idade > 13) status = '<span class="badge bg-red-100 text-red-800">' + idade + 'm vencido</span>';
+            return '<tr class="border-t hover:bg-gray-50">' +
+              '<td class="p-2">' + escapeHtml(e?.nome||'?') + '</td>' +
+              '<td class="font-mono font-bold">' + escapeHtml(b?.numero||'?') + '</td>' +
+              '<td>' + fmtNum(l.qtd) + '</td>' +
+              '<td>' + escapeHtml(l.porta_enxerto||'-') + '</td>' +
+              '<td>' + escapeHtml(l.variedade||'-') + '</td>' +
+              '<td>' + fmtDate(l.data_plantio) + '</td>' +
+              '<td>' + idade + 'm</td>' +
+              '<td>' + escapeHtml(fu?.nome||'-') + '</td>' +
+              '<td>' + status + '</td>' +
+              (isAdmin() ? '<td><button onclick="editarLote(' + JSON.stringify(l.id) + ')" class="text-blue-700 text-xs hover:underline">editar</button> · <button onclick="deletarLote(' + JSON.stringify(l.id) + ')" class="text-red-700 text-xs hover:underline">excluir</button></td>' : '') +
+              '</tr>';
           }).join('')}
         </tbody>
       </table>
@@ -2145,6 +2216,98 @@ VIEWS.importar = function() {
       if (!bc || qtd <= 0) { skip++; continue; }
       let plantio = r[map.plantio];
       if (plantio instanceof Date) plantio = plantio.toISOString().slice(0,10);
+      else if (typeof plantio === 'number') plantio = new Date(Math.round((plantio - 25569) * 86400 * 1000)).toISOString().slice(0,10);
+      else plantio = String(plantio||'');
+      if (!/^\d{4}-\d{2}-\d{2}/.test(plantio)) { skip++; continue; }
+      const nomeFunc = String(r[map.nome]||'').trim();
+      let funcId = funcDefault || null;
+      if (nomeFunc) {
+        let f = STATE.data.funcionarios.find(x => x.nome.toLowerCase() === nomeFunc.toLowerCase());
+        if (!f) f = await DB.insert('funcionarios', { nome:nomeFunc, tipo:'por_muda', salario_fixo:null });
+        funcId = f.id;
+      }
+      let banc = STATE.data.bancadas.find(b => b.estufa_id === estufaId && b.numero === bc);
+      if (!banc) banc = await DB.insert('bancadas', { estufa_id:estufaId, numero:bc, funcionario_id:funcId });
+      await DB.insert('lotes', { bancada_id:banc.id, funcionario_id:funcId, qtd, porta_enxerto: String(r[map.porta]||'').trim() || null, variedade: String(r[map.var]||'').trim() || null, tipo:'muda_normal', data_plantio:plantio.slice(0,10), data_enxerto:null });
+      ok++;
+    }
+    $('#impResult').innerHTML = '<div class="bg-green-50 p-3 rounded text-sm"><b>'+ok+'</b> importados, <b>'+skip+'</b> ignorados.</div>';
+    toast('Importação OK', 'success');
+  }
+};
+
+// ============================================================
+// BOOTSTRAP
+// ============================================================
+window.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const ok = await tryLoadConfig();
+    if (ok) await enterApp(); else showLogin();
+  } catch (e) {
+    console.error('Bootstrap:', e);
+    try { showLogin(); } catch(e2) {
+      document.body.innerHTML = '<div style="padding:20px"><h2>Erro ao iniciar</h2><pre style="background:#fee;padding:10px;color:#900;font-size:12px">'+(e.stack||e.message)+'</pre></div>';
+    }
+  }
+});
+
+$('#loginForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  $('#loginErr').classList.add('hidden');
+  try { await doLogin($('#loginEmail').value, $('#loginPass').value); enterApp(); }
+  catch (err) { $('#loginErr').textContent = err.message; $('#loginErr').classList.remove('hidden'); }
+});
+
+$('#signupBtn').addEventListener('click', async () => {
+  $('#loginErr').classList.add('hidden');
+  try {
+    if (!$('#loginEmail').value || $('#loginPass').value.length < 6) throw new Error('Email + senha (mín 6 chars)');
+    await doSignup($('#loginEmail').value, $('#loginPass').value);
+  } catch (err) { $('#loginErr').textContent = err.message; $('#loginErr').classList.remove('hidden'); }
+});
+
+$('#logoutBtn').addEventListener('click', doLogout);
+
+$('#resetBtn').addEventListener('click', async () => {
+  if (!confirm('Recarregar TODOS os dados da planilha?')) return;
+  for (const k of Object.keys(localStorage)) {
+    if (k.startsWith('estufas_demo_v')) localStorage.removeItem(k);
+  }
+  toast('Recarregando...', 'success');
+  setTimeout(() => location.reload(), 600);
+});
+
+$('#cfgBtn').addEventListener('click', () => {
+  $('#loginScreen').classList.add('hidden');
+  $('#cfgScreen').classList.remove('hidden');
+  let cfg = {};
+  try { cfg = JSON.parse(localStorage.getItem('estufas_supabase_cfg') || '{}'); } catch(e) {}
+  $('#cfgUrl').value = cfg.url || '';
+  $('#cfgKey').value = cfg.key || '';
+});
+
+$('#cfgSave').addEventListener('click', () => {
+  const url = $('#cfgUrl').value.trim(), key = $('#cfgKey').value.trim();
+  if (!url || !key) { toast('Preencha URL e key', 'error'); return; }
+  if (typeof supabase === 'undefined') { toast('Supabase não carregou', 'error'); return; }
+  localStorage.setItem('estufas_supabase_cfg', JSON.stringify({ url, key }));
+  STATE.supa = supabase.createClient(url, key);
+  STATE.mode = 'supabase';
+  toast('Conectado. Faça login.', 'success');
+  showLogin();
+});
+
+$('#cfgClear').addEventListener('click', () => {
+  localStorage.removeItem('estufas_supabase_cfg');
+  STATE.mode = 'demo'; STATE.supa = null;
+  showLogin();
+});
+
+$$('.nav-btn').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
+$('#menuBtn').addEventListener('click', () => $('#sidebar').classList.toggle('hidden'));
+
+})();
+lantio instanceof Date) plantio = plantio.toISOString().slice(0,10);
       else if (typeof plantio === 'number') plantio = new Date(Math.round((plantio - 25569) * 86400 * 1000)).toISOString().slice(0,10);
       else plantio = String(plantio||'');
       if (!/^\d{4}-\d{2}-\d{2}/.test(plantio)) { skip++; continue; }
