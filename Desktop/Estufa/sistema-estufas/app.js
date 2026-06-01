@@ -1976,14 +1976,33 @@ function getCfgPlaq() {
   let cfg = {};
   try { cfg = JSON.parse(localStorage.getItem('estufas_cfg_plaq') || '{}'); } catch(e){}
   return Object.assign({
+    // Dados padrão (São José)
     produtor: 'José Inacio Rosa',
     propriedade: 'Sitio São José',
     municipio: 'Monte Azul Paulista',
     processo: '20251257',
-    lote: '0'
+    lote: '0',
+    // Dados específicos por sítio (sobrescrevem o padrão)
+    sitios: {
+      sao_jose:      { produtor: 'José Inacio Rosa',          propriedade: 'Sitio São José',  processo: '20251257' },
+      bela_vista:    { produtor: 'Maria Sirlei Da Costa Rosa', propriedade: 'Sitio Bela Vista', processo: '20251257' },
+      santo_antonio: { produtor: 'José Inacio Rosa',          propriedade: 'Sitio Santo Antônio', processo: '20251257' }
+    }
   }, cfg);
 }
 function setCfgPlaq(cfg) { localStorage.setItem('estufas_cfg_plaq', JSON.stringify(cfg)); }
+
+// Retorna os dados certos para uma estufa (produtor/propriedade/processo conforme o sítio)
+function dadosPlaqEstufa(estufa, cfgGlobal) {
+  const s = cfgGlobal.sitios?.[estufa.sitio];
+  return {
+    produtor:    s?.produtor    || cfgGlobal.produtor,
+    propriedade: s?.propriedade || cfgGlobal.propriedade,
+    processo:    s?.processo    || cfgGlobal.processo,
+    municipio:   cfgGlobal.municipio,
+    lote:        cfgGlobal.lote
+  };
+}
 
 VIEWS.plaquinhas = function() {
   STATE.plaqEst = STATE.plaqEst || (STATE.data.estufas[0]?.id || '');
@@ -2094,29 +2113,39 @@ window.gerarPlaquinhas = function() {
 
   function renderEtiqueta(et) {
     const l = et.lote;
+    // Dados específicos por sítio (sobrescrevem o padrão da config global)
+    const d = dadosPlaqEstufa(et.estufa, cfg);
     // Cada bancada pode ter seu próprio Nº Processo (override do padrão)
-    const procBancada = (STATE.plaqProc?.[et.bancada.id]) || et.bancada.processo || cfg.processo;
+    const procBancada = (STATE.plaqProc?.[et.bancada.id]) || et.bancada.processo || d.processo;
+    // Número da estufa (tenta extrair número, senão usa o nome inteiro abreviado)
+    let estNum = (et.estufa.nome.match(/\d+/) || [])[0];
+    if (!estNum) {
+      // Bela Vista / Santo Antonio: usa abreviação curta
+      if (et.estufa.sitio === 'bela_vista') estNum = 'BV';
+      else if (et.estufa.sitio === 'santo_antonio') estNum = 'SA';
+      else estNum = '?';
+    }
     return `
-      <div class="border-2 border-black p-2 text-xs" style="page-break-inside:avoid">
+      <div class="border-2 border-black p-2 text-xs" style="page-break-inside:avoid" contenteditable="false">
         <div class="grid grid-cols-[1fr_60px] gap-1">
           <div class="space-y-1">
-            <div><b>Produtor:</b> ${escapeHtml(cfg.produtor)}</div>
-            <div><b>Propriedade:</b> ${escapeHtml(cfg.propriedade)}</div>
-            <div class="flex gap-2"><span><b>Nº Processo:</b> ${escapeHtml(procBancada)}</span><span><b>Lote:</b> ${escapeHtml(cfg.lote)}</span></div>
-            <div class="flex gap-2"><span><b>Bancada:</b> ${escapeHtml(et.bancada.numero)}</span><span><b>Quantidade:</b> ${fmtNum(l.qtd)}</span></div>
-            <div class="border-t pt-1 mt-1"><b>Porta enxerto:</b> <span class="float-right text-[10px]"><b>Data plantio:</b> ${fmtDate(l.data_plantio)}</span></div>
-            <div class="pl-3"><b>Espécie:</b> ${escapeHtml((l.porta_enxerto||'').split(' ')[0] || '-')}</div>
-            <div class="pl-3"><b>Cultivar:</b> ${escapeHtml(l.porta_enxerto||'-')}</div>
-            <div class="border-t pt-1 mt-1"><b>Enxertia:</b> <span class="float-right text-[10px]"><b>Data enxertia:</b> ${fmtDate(l.data_enxerto)}</span></div>
-            <div class="pl-3"><b>Espécie:</b> ${escapeHtml(l.variedade ? 'Laranja' : '—')}</div>
-            <div class="pl-3"><b>Cultivar:</b> ${escapeHtml(l.variedade || 'sem enxerto')}</div>
+            <div><b>Produtor:</b> <span contenteditable="true" class="hover:bg-yellow-100 px-1 rounded">${escapeHtml(d.produtor)}</span></div>
+            <div><b>Propriedade:</b> <span contenteditable="true" class="hover:bg-yellow-100 px-1 rounded">${escapeHtml(d.propriedade)}</span></div>
+            <div class="flex gap-2"><span><b>Nº Processo:</b> <span contenteditable="true" class="hover:bg-yellow-100 px-1 rounded">${escapeHtml(procBancada)}</span></span><span><b>Lote:</b> <span contenteditable="true" class="hover:bg-yellow-100 px-1 rounded">${escapeHtml(d.lote)}</span></span></div>
+            <div class="flex gap-2"><span><b>Bancada:</b> <span contenteditable="true" class="hover:bg-yellow-100 px-1 rounded">${escapeHtml(et.bancada.numero)}</span></span><span><b>Quantidade:</b> <span contenteditable="true" class="hover:bg-yellow-100 px-1 rounded">${fmtNum(l.qtd)}</span></span></div>
+            <div class="border-t pt-1 mt-1"><b>Porta enxerto:</b> <span class="float-right text-[10px]"><b>Data plantio:</b> <span contenteditable="true" class="hover:bg-yellow-100 px-1 rounded">${fmtDate(l.data_plantio)}</span></span></div>
+            <div class="pl-3"><b>Espécie:</b> <span contenteditable="true" class="hover:bg-yellow-100 px-1 rounded">${escapeHtml((l.porta_enxerto||'').split(' ')[0] || '-')}</span></div>
+            <div class="pl-3"><b>Cultivar:</b> <span contenteditable="true" class="hover:bg-yellow-100 px-1 rounded">${escapeHtml(l.porta_enxerto||'-')}</span></div>
+            <div class="border-t pt-1 mt-1"><b>Enxertia:</b> <span class="float-right text-[10px]"><b>Data enxertia:</b> <span contenteditable="true" class="hover:bg-yellow-100 px-1 rounded">${fmtDate(l.data_enxerto)}</span></span></div>
+            <div class="pl-3"><b>Espécie:</b> <span contenteditable="true" class="hover:bg-yellow-100 px-1 rounded">${escapeHtml(l.variedade ? 'Laranja' : '—')}</span></div>
+            <div class="pl-3"><b>Cultivar:</b> <span contenteditable="true" class="hover:bg-yellow-100 px-1 rounded">${escapeHtml(l.variedade || 'sem enxerto')}</span></div>
           </div>
           <div class="flex flex-col items-center justify-center bg-gray-100 border border-gray-400 rounded p-1">
             <div class="text-[8px] font-bold">ESTUFA</div>
             <div class="text-[8px]">N°</div>
-            <div class="text-3xl font-black">${escapeHtml(et.estufa.nome.replace(/[^0-9]/g,'') || '?')}</div>
+            <div class="text-3xl font-black" contenteditable="true">${escapeHtml(estNum)}</div>
             <div class="text-[8px] mt-1">BC</div>
-            <div class="text-xl font-bold">${escapeHtml(et.bancada.numero)}</div>
+            <div class="text-xl font-bold" contenteditable="true">${escapeHtml(et.bancada.numero)}</div>
           </div>
         </div>
       </div>`;
@@ -2124,7 +2153,7 @@ window.gerarPlaquinhas = function() {
 
   $('#plaqResult').innerHTML = `
     <div class="mb-3 no-print flex items-center justify-between bg-blue-50 border border-blue-200 p-3 rounded">
-      <span class="text-sm"><b>${etiquetas.length}</b> etiquetas geradas. Confira e clique em imprimir.</span>
+      <span class="text-sm"><b>${etiquetas.length}</b> etiquetas geradas. <span class="text-blue-700">💡 Os campos amarelos ao passar o mouse são editáveis</span> — clica neles, digita o novo valor, e depois imprime.</span>
       <button onclick="window.print()" class="bg-green-700 text-white px-4 py-2 rounded text-sm">🖨️ Imprimir</button>
     </div>
     <div class="bg-white p-4 rounded-xl shadow print-area">
