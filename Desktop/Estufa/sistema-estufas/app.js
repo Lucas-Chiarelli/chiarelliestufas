@@ -110,11 +110,12 @@ function idadeMeses(dPlantio, ref) {
   return m;
 }
 
-// Regra de pagamento (CORRIGIDA - mes do plantio = parcela 1):
-//   parcelas 1..12: parcela mensal = (valor_total - valor_final) / 12 * qtd  (R$ 0,0958/mês São José)
-//   parcela 13:     paga SOMENTE a retenção = valor_final * qtd  (R$ 0,15/muda)
-//   14+:            bancada SAI da folha (não paga mais)
-// Exemplo: plantio 01/05/2025 → mai/2025..abr/2026 = parcelas 1..12; mai/2026 = retenção; jun/2026 = sai
+// Regra de pagamento (mes do plantio = parcela 1):
+//   parcelas 1..12 = parcela mensal = (valor_total - valor_final) / 12 * qtd
+//   parcela 13     = SOMENTE a retenção = valor_final * qtd  (R$ 0,15/muda)
+//   parcela 14+    = bancada SAI da folha (não paga mais)
+// Plantio Mar/2025 → Mar=parc 1, ..., Fev/2026=parc 12, Mar/2026=parc 13 (retencao), Abr/2026=sai
+// Plantio Jul/2025 → Jul=parc 1, ..., Jun/2026=parc 12, Jul/2026=parc 13 (retencao), Ago/2026=sai
 function valorPagamentoLoteMes(lote, ano, mes) {
   const b = byId('bancadas', lote.bancada_id);
   if (!b) return { valor:0, parcela:0, motivo:'sem bancada', valorUnitario:0 };
@@ -129,7 +130,7 @@ function valorPagamentoLoteMes(lote, ano, mes) {
   const parc = unit * lote.qtd;
   const ret = vf * lote.qtd;
   const parcelaNum = idd + 1; // mes do plantio = parcela 1
-  // parcelas 1..12 = parcela mensal normal (sem retenção)
+  // parcelas 1..12 = parcela mensal
   if (parcelaNum <= 12) return { valor:parc, parcela:parcelaNum, motivo:'parcela mensal', valorUnitario:unit, valorTotal:vt, valorFinal:vf };
   // parcela 13 = SÓ retenção
   if (parcelaNum === 13) return { valor:ret, parcela:13, motivo:'retencao final', valorUnitario:unit, valorTotal:vt, valorFinal:vf };
@@ -168,7 +169,7 @@ function lotesParaExame() {
     .filter(l => l.diasDesdeEnxerto >= 50);
 }
 
-// Vencido = mais de parcela 13 = idade calendario > 12 meses (já passou da retenção)
+// Vencido = parcela > 13 = idd > 12 (já passou da retenção)
 function lotesVencidos() {
   const today = new Date();
   return STATE.data.lotes
@@ -177,7 +178,7 @@ function lotesVencidos() {
 }
 
 // Status de bancada: ativa | finalizando(parc12) | retencao(parc13) | vencida(>parc13) | vazia
-// Convenção: parcela = idade_calendario + 1 (mes do plantio = parcela 1)
+// Convenção: parcela = idd + 1 (mes do plantio = parcela 1)
 function statusBancada(bancada) {
   const today = new Date();
   const lotes = STATE.data.lotes.filter(l => l.bancada_id === bancada.id);
@@ -187,8 +188,8 @@ function statusBancada(bancada) {
   const maxIdade = Math.max(...idades);
   const minParc = minIdade + 1, maxParc = maxIdade + 1;
   if (minParc > 13) return { tipo:'vencida', cor:'bg-red-100 text-red-800 border-red-300', label:'só vencidos', detalhe:`parc ${minParc}-${maxParc}, replantar` };
-  if (minParc === 13) return { tipo:'retencao', cor:'bg-orange-100 text-orange-800 border-orange-300', label:'13ª (retenção)', detalhe:`parc ${minParc}, paga 0,15 × qtd` };
-  if (minParc === 12) return { tipo:'final', cor:'bg-yellow-100 text-yellow-800 border-yellow-300', label:'12ª (última mensal)', detalhe:`parc ${minParc}` };
+  if (minParc === 13) return { tipo:'retencao', cor:'bg-orange-100 text-orange-800 border-orange-300', label:'parc 13 (retenção)', detalhe:`paga 0,15 × qtd` };
+  if (minParc === 12) return { tipo:'final', cor:'bg-yellow-100 text-yellow-800 border-yellow-300', label:'parc 12 (última mensal)', detalhe:`${minParc}` };
   return { tipo:'ativa', cor:'bg-green-100 text-green-800 border-green-300', label:'ativa', detalhe:`parc ${minParc}-${maxParc}` };
 }
 
@@ -676,7 +677,7 @@ VIEWS.lotes = function() {
           <select onchange="STATE.lotesFiltro.status=this.value;setView('lotes')" class="w-full mt-1 px-3 py-2 border rounded">
             <option value="">— todos —</option>
             <option value="ativo" ${f.status==='ativo'?'selected':''}>Ativo (parc 1-11)</option>
-            <option value="ultima" ${f.status==='ultima'?'selected':''}>Última parcela mensal (parc 12)</option>
+            <option value="ultima" ${f.status==='ultima'?'selected':''}>Última mensal (parc 12)</option>
             <option value="retencao" ${f.status==='retencao'?'selected':''}>Retenção (parc 13)</option>
             <option value="vencido" ${f.status==='vencido'?'selected':''}>Vencido (>parc 13)</option>
           </select>
@@ -907,7 +908,7 @@ function painelVerificacao(detalhes) {
           </tr>
         </tbody>
       </table>
-      <p class="text-xs text-blue-700 mt-2">Fórmula: <b>parcelas 1–12</b> (mês do plantio = parcela 1): (preço − retenção) ÷ 12 × qtd. <b>Parcela 13</b>: só retenção (R$ 0,15 × qtd). <b>Parc 14+</b>: bancada sai da folha.</p>
+      <p class="text-xs text-blue-700 mt-2">Fórmula: <b>mês do plantio = parcela 1</b>. Parcelas 1–12: (preço − retenção) ÷ 12 × qtd. <b>Parcela 13</b> (mesmo mês do plantio, 1 ano depois): só retenção (R$ 0,15 × qtd). <b>Parc 14+</b>: bancada sai da folha.</p>
     </div>
   `;
 }
