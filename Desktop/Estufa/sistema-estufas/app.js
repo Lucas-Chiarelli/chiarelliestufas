@@ -1025,6 +1025,8 @@ function renderFolhaIndividual(f, c, ano, mes) {
       </div>`;
   }
   const porEstufa = {};
+  let subParcelas = 0, subRetencao = 0;
+  const bancadasRet = [];
   for (const d of c.detalhes) {
     const k = d.estufa?.id || '?';
     porEstufa[k] = porEstufa[k] || { estufa:d.estufa, items:[], subtotal:0, mudas:0, enxertos:0 };
@@ -1032,6 +1034,12 @@ function renderFolhaIndividual(f, c, ano, mes) {
     porEstufa[k].subtotal += d.valor;
     porEstufa[k].mudas += d.lote.qtd;
     porEstufa[k].enxertos += qtdEnxertos(d.lote);
+    if (d.motivo && d.motivo.includes('retencao')) {
+      subRetencao += d.valor;
+      bancadasRet.push((d.estufa?.nome||'?') + ' BC' + (d.bancada?.numero||'?'));
+    } else {
+      subParcelas += d.valor;
+    }
   }
   return `
     <div class="text-center mb-4">
@@ -1080,9 +1088,22 @@ function renderFolhaIndividual(f, c, ano, mes) {
         </tbody>
       </table>
     `).join('')}
-    <div class="bg-green-100 p-4 rounded-xl mt-4 flex justify-between items-baseline">
-      <span class="text-sm font-medium">TOTAL A RECEBER:</span>
-      <span class="text-3xl font-bold text-green-800">${fmtMoneyExato(c.total)}</span>
+    <div class="bg-white border-2 border-green-700 rounded-xl mt-4 overflow-hidden">
+      <div class="px-4 py-2 flex justify-between items-baseline border-b">
+        <span class="text-sm">Subtotal parcelas mensais (mês 1 a 12):</span>
+        <span class="text-lg font-mono font-semibold">${fmtMoneyExato(subParcelas)}</span>
+      </div>
+      <div class="px-4 py-2 flex justify-between items-baseline border-b ${subRetencao>0?'bg-yellow-50':''}">
+        <div>
+          <span class="text-sm">Subtotal retenção (mês 13):</span>
+          ${subRetencao>0 ? `<div class="text-[10px] text-gray-600 mt-0.5">Bancadas: ${escapeHtml(bancadasRet.join(', '))}</div>` : `<div class="text-[10px] text-gray-500 mt-0.5">Nenhuma bancada no mês 13 neste período</div>`}
+        </div>
+        <span class="text-lg font-mono font-semibold ${subRetencao>0?'text-yellow-800':''}">${fmtMoneyExato(subRetencao)}</span>
+      </div>
+      <div class="bg-green-100 px-4 py-3 flex justify-between items-baseline">
+        <span class="text-sm font-bold">TOTAL DO MÊS + RETENÇÃO:</span>
+        <span class="text-3xl font-bold text-green-800">${fmtMoneyExato(c.total)}</span>
+      </div>
     </div>
     ${painelVerificacao(c.detalhes)}
     <div class="mt-12 grid grid-cols-2 gap-8 text-sm">
@@ -2309,30 +2330,26 @@ $('#resetBtn').addEventListener('click', async () => {
 $('#cfgBtn').addEventListener('click', () => {
   $('#loginScreen').classList.add('hidden');
   $('#cfgScreen').classList.remove('hidden');
-  let cfg = {};
-  try { cfg = JSON.parse(localStorage.getItem('estufas_supabase_cfg') || '{}'); } catch(e) {}
-  $('#cfgUrl').value = cfg.url || '';
-  $('#cfgKey').value = cfg.key || '';
+  const cfg = JSON.parse(localStorage.getItem('estufas_cfg')||'{}');
+  $('#cfgUrl').value = cfg.url||'';
+  $('#cfgKey').value = cfg.key||'';
 });
 
 $('#cfgSave').addEventListener('click', () => {
-  const url = $('#cfgUrl').value.trim(), key = $('#cfgKey').value.trim();
-  if (!url || !key) { toast('Preencha URL e key', 'error'); return; }
-  if (typeof supabase === 'undefined') { toast('Supabase não carregou', 'error'); return; }
-  localStorage.setItem('estufas_supabase_cfg', JSON.stringify({ url, key }));
-  STATE.supa = supabase.createClient(url, key);
-  STATE.mode = 'supabase';
-  toast('Conectado. Faça login.', 'success');
-  showLogin();
+  const url = $('#cfgUrl').value.trim();
+  const key = $('#cfgKey').value.trim();
+  if (!url || !key) { alert('Preencha URL e Key'); return; }
+  localStorage.setItem('estufas_cfg', JSON.stringify({ url, key }));
+  toast('Configuração salva. Recarregando...', 'success');
+  setTimeout(() => location.reload(), 600);
 });
 
 $('#cfgClear').addEventListener('click', () => {
-  localStorage.removeItem('estufas_supabase_cfg');
-  STATE.mode = 'demo'; STATE.supa = null;
-  showLogin();
+  localStorage.removeItem('estufas_cfg');
+  $('#cfgScreen').classList.add('hidden');
+  $('#loginScreen').classList.remove('hidden');
 });
 
-$$('.nav-btn').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
 $('#menuBtn').addEventListener('click', () => $('#sidebar').classList.toggle('hidden'));
 
 })();
