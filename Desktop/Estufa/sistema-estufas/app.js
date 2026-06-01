@@ -2330,26 +2330,30 @@ $('#resetBtn').addEventListener('click', async () => {
 $('#cfgBtn').addEventListener('click', () => {
   $('#loginScreen').classList.add('hidden');
   $('#cfgScreen').classList.remove('hidden');
-  const cfg = JSON.parse(localStorage.getItem('estufas_cfg')||'{}');
-  $('#cfgUrl').value = cfg.url||'';
-  $('#cfgKey').value = cfg.key||'';
+  let cfg = {};
+  try { cfg = JSON.parse(localStorage.getItem('estufas_supabase_cfg') || '{}'); } catch(e) {}
+  $('#cfgUrl').value = cfg.url || '';
+  $('#cfgKey').value = cfg.key || '';
 });
 
 $('#cfgSave').addEventListener('click', () => {
-  const url = $('#cfgUrl').value.trim();
-  const key = $('#cfgKey').value.trim();
-  if (!url || !key) { alert('Preencha URL e Key'); return; }
-  localStorage.setItem('estufas_cfg', JSON.stringify({ url, key }));
-  toast('Configuração salva. Recarregando...', 'success');
-  setTimeout(() => location.reload(), 600);
+  const url = $('#cfgUrl').value.trim(), key = $('#cfgKey').value.trim();
+  if (!url || !key) { toast('Preencha URL e key', 'error'); return; }
+  if (typeof supabase === 'undefined') { toast('Supabase nao carregou', 'error'); return; }
+  localStorage.setItem('estufas_supabase_cfg', JSON.stringify({ url, key }));
+  STATE.supa = supabase.createClient(url, key);
+  STATE.mode = 'supabase';
+  toast('Conectado. Faca login.', 'success');
+  showLogin();
 });
 
 $('#cfgClear').addEventListener('click', () => {
-  localStorage.removeItem('estufas_cfg');
-  $('#cfgScreen').classList.add('hidden');
-  $('#loginScreen').classList.remove('hidden');
+  localStorage.removeItem('estufas_supabase_cfg');
+  STATE.mode = 'demo'; STATE.supa = null;
+  showLogin();
 });
 
+$$('.nav-btn').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
 $('#menuBtn').addEventListener('click', () => $('#sidebar').classList.toggle('hidden'));
 
 })();
