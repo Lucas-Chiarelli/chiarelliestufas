@@ -110,11 +110,11 @@ function idadeMeses(dPlantio, ref) {
   return m;
 }
 
-// Regra de pagamento (CORRIGIDA):
-//   meses 1..12: parcela mensal = (valor_total - valor_final) / 12 * qtd  (R$ 0,0958/mês São José)
-//   mes 13:      paga SOMENTE a retenção = valor_final * qtd  (R$ 0,15/muda)
-//   mes 14+:     bancada SAI da folha (não paga mais)
-// Exemplo: plantio 01/01/2026 → jan/2026..dez/2026 = parcela; jan/2027 = retenção; fev/2027 = sai
+// Regra de pagamento (CORRIGIDA - mes do plantio = parcela 1):
+//   parcelas 1..12: parcela mensal = (valor_total - valor_final) / 12 * qtd  (R$ 0,0958/mês São José)
+//   parcela 13:     paga SOMENTE a retenção = valor_final * qtd  (R$ 0,15/muda)
+//   14+:            bancada SAI da folha (não paga mais)
+// Exemplo: plantio 01/05/2025 → mai/2025..abr/2026 = parcelas 1..12; mai/2026 = retenção; jun/2026 = sai
 function valorPagamentoLoteMes(lote, ano, mes) {
   const b = byId('bancadas', lote.bancada_id);
   if (!b) return { valor:0, parcela:0, motivo:'sem bancada', valorUnitario:0 };
@@ -123,17 +123,18 @@ function valorPagamentoLoteMes(lote, ano, mes) {
   const preco = getPrecoLote(lote, e.sitio);
   const ref = new Date(ano, mes, 0);
   const idd = idadeMeses(lote.data_plantio, ref);
-  if (idd < 1) return { valor:0, parcela:idd, motivo:'antes do inicio', valorUnitario:0 };
+  if (idd < 0) return { valor:0, parcela:0, motivo:'antes do plantio', valorUnitario:0 };
   const vt = Number(preco.valor_total), vf = Number(preco.valor_final);
   const unit = (vt - vf) / 12;
   const parc = unit * lote.qtd;
   const ret = vf * lote.qtd;
-  // 1..12 = parcela mensal normal (sem retenção)
-  if (idd <= 12) return { valor:parc, parcela:idd, motivo:'parcela mensal', valorUnitario:unit, valorTotal:vt, valorFinal:vf };
-  // 13 = SÓ retenção
-  if (idd === 13) return { valor:ret, parcela:13, motivo:'retencao final', valorUnitario:unit, valorTotal:vt, valorFinal:vf };
+  const parcelaNum = idd + 1; // mes do plantio = parcela 1
+  // parcelas 1..12 = parcela mensal normal (sem retenção)
+  if (parcelaNum <= 12) return { valor:parc, parcela:parcelaNum, motivo:'parcela mensal', valorUnitario:unit, valorTotal:vt, valorFinal:vf };
+  // parcela 13 = SÓ retenção
+  if (parcelaNum === 13) return { valor:ret, parcela:13, motivo:'retencao final', valorUnitario:unit, valorTotal:vt, valorFinal:vf };
   // 14+ = sai da folha
-  return { valor:0, parcela:idd, motivo:'vencido (>13 meses)', valorUnitario:unit };
+  return { valor:0, parcela:parcelaNum, motivo:'vencido (>13 meses)', valorUnitario:unit };
 }
 
 function calcularPagamentoFuncionario(funcId, ano, mes) {
@@ -167,15 +168,16 @@ function lotesParaExame() {
     .filter(l => l.diasDesdeEnxerto >= 50);
 }
 
-// Vencido = mais de 13 meses (já passou da retenção do mês 13)
+// Vencido = mais de parcela 13 = idade calendario > 12 meses (já passou da retenção)
 function lotesVencidos() {
   const today = new Date();
   return STATE.data.lotes
     .map(l => ({ ...l, idade: idadeMeses(l.data_plantio, today) }))
-    .filter(l => l.idade > 13);
+    .filter(l => l.idade > 12);
 }
 
-// Status de bancada: ativa | finalizando(12) | retencao(13) | vencida(>13) | vazia
+// Status de bancada: ativa | finalizando(parc12) | retencao(parc13) | vencida(>parc13) | vazia
+// Convenção: parcela = idade_calendario + 1 (mes do plantio = parcela 1)
 function statusBancada(bancada) {
   const today = new Date();
   const lotes = STATE.data.lotes.filter(l => l.bancada_id === bancada.id);
@@ -183,10 +185,11 @@ function statusBancada(bancada) {
   const idades = lotes.map(l => idadeMeses(l.data_plantio, today));
   const minIdade = Math.min(...idades);
   const maxIdade = Math.max(...idades);
-  if (minIdade > 13) return { tipo:'vencida', cor:'bg-red-100 text-red-800 border-red-300', label:'só vencidos', detalhe:`+${maxIdade}m, replantar` };
-  if (minIdade === 13) return { tipo:'retencao', cor:'bg-orange-100 text-orange-800 border-orange-300', label:'retenção', detalhe:`${minIdade}-${maxIdade}m, paga 0,15` };
-  if (minIdade === 12) return { tipo:'final', cor:'bg-yellow-100 text-yellow-800 border-yellow-300', label:'última parcela', detalhe:`${minIdade}-${maxIdade}m` };
-  return { tipo:'ativa', cor:'bg-green-100 text-green-800 border-green-300', label:'ativa', detalhe:`${minIdade}-${maxIdade}m` };
+  const minParc = minIdade + 1, maxParc = maxIdade + 1;
+  if (minParc > 13) return { tipo:'vencida', cor:'bg-red-100 text-red-800 border-red-300', label:'só vencidos', detalhe:`parc ${minParc}-${maxParc}, replantar` };
+  if (minParc === 13) return { tipo:'retencao', cor:'bg-orange-100 text-orange-800 border-orange-300', label:'13ª (retenção)', detalhe:`parc ${minParc}, paga 0,15 × qtd` };
+  if (minParc === 12) return { tipo:'final', cor:'bg-yellow-100 text-yellow-800 border-yellow-300', label:'12ª (última mensal)', detalhe:`parc ${minParc}` };
+  return { tipo:'ativa', cor:'bg-green-100 text-green-800 border-green-300', label:'ativa', detalhe:`parc ${minParc}-${maxParc}` };
 }
 
 // Lista bancadas vazias (sem produção ativa) - inclui slots não cadastrados
@@ -621,10 +624,11 @@ VIEWS.lotes = function() {
     const today = new Date();
     lotes = lotes.filter(l => {
       const idd = idadeMeses(l.data_plantio, today);
-      if (f.status === 'ativo') return idd >= 1 && idd <= 11;
-      if (f.status === 'ultima') return idd === 12;
-      if (f.status === 'retencao') return idd === 13;
-      if (f.status === 'vencido') return idd > 13;
+      const parc = idd + 1; // mes do plantio = parcela 1
+      if (f.status === 'ativo') return parc >= 1 && parc <= 11;
+      if (f.status === 'ultima') return parc === 12;
+      if (f.status === 'retencao') return parc === 13;
+      if (f.status === 'vencido') return parc > 13;
       return true;
     });
   }
@@ -671,10 +675,10 @@ VIEWS.lotes = function() {
           <label class="text-xs text-gray-500 uppercase">Status</label>
           <select onchange="STATE.lotesFiltro.status=this.value;setView('lotes')" class="w-full mt-1 px-3 py-2 border rounded">
             <option value="">— todos —</option>
-            <option value="ativo" ${f.status==='ativo'?'selected':''}>Ativo (1-11m)</option>
-            <option value="ultima" ${f.status==='ultima'?'selected':''}>Última parcela (12m)</option>
-            <option value="retencao" ${f.status==='retencao'?'selected':''}>Retenção (13m)</option>
-            <option value="vencido" ${f.status==='vencido'?'selected':''}>Vencido (>13m)</option>
+            <option value="ativo" ${f.status==='ativo'?'selected':''}>Ativo (parc 1-11)</option>
+            <option value="ultima" ${f.status==='ultima'?'selected':''}>Última parcela mensal (parc 12)</option>
+            <option value="retencao" ${f.status==='retencao'?'selected':''}>Retenção (parc 13)</option>
+            <option value="vencido" ${f.status==='vencido'?'selected':''}>Vencido (>parc 13)</option>
           </select>
         </div>
       </div>
@@ -699,10 +703,11 @@ VIEWS.lotes = function() {
             const e = b ? byId('estufas', b.estufa_id) : null;
             const fu = byId('funcionarios', l.funcionario_id);
             const idade = idadeMeses(l.data_plantio, new Date());
-            let status = '<span class="badge bg-green-100 text-green-800">' + idade + 'm ativo</span>';
-            if (idade === 12) status = '<span class="badge bg-yellow-100 text-yellow-800">' + idade + 'm última parcela</span>';
-            if (idade === 13) status = '<span class="badge bg-orange-100 text-orange-800">' + idade + 'm retenção</span>';
-            if (idade > 13) status = '<span class="badge bg-red-100 text-red-800">' + idade + 'm vencido</span>';
+            const parc = idade + 1; // mes do plantio = parcela 1
+            let status = '<span class="badge bg-green-100 text-green-800">parc ' + parc + ' ativo</span>';
+            if (parc === 12) status = '<span class="badge bg-yellow-100 text-yellow-800">parc 12 (última mensal)</span>';
+            if (parc === 13) status = '<span class="badge bg-orange-100 text-orange-800">parc 13 (retenção)</span>';
+            if (parc > 13) status = '<span class="badge bg-red-100 text-red-800">parc ' + parc + ' vencido</span>';
             return '<tr class="border-t hover:bg-gray-50">' +
               '<td class="p-2">' + escapeHtml(e?.nome||'?') + '</td>' +
               '<td class="font-mono font-bold">' + escapeHtml(b?.numero||'?') + '</td>' +
@@ -902,7 +907,7 @@ function painelVerificacao(detalhes) {
           </tr>
         </tbody>
       </table>
-      <p class="text-xs text-blue-700 mt-2">Fórmula: <b>meses 1–12</b>: (preço − retenção) ÷ 12 × qtd. <b>Mês 13</b>: só retenção (R$ 0,15 × qtd). <b>Mês 14+</b>: bancada sai da folha.</p>
+      <p class="text-xs text-blue-700 mt-2">Fórmula: <b>parcelas 1–12</b> (mês do plantio = parcela 1): (preço − retenção) ÷ 12 × qtd. <b>Parcela 13</b>: só retenção (R$ 0,15 × qtd). <b>Parc 14+</b>: bancada sai da folha.</p>
     </div>
   `;
 }
@@ -1596,7 +1601,7 @@ VIEWS.estoque = function() {
   const totalDisp = lotes.reduce((s,x)=>s+x.disponivel,0);
   const totalInicial = lotes.reduce((s,x)=>s+x.l.qtd,0);
   const totalVendido = lotes.reduce((s,x)=>s+x.saidas,0);
-  const lotesVencidosComEstoque = lotes.filter(x => x.idade > 13 && x.disponivel > 0).length;
+  const lotesVencidosComEstoque = lotes.filter(x => x.idade > 12 && x.disponivel > 0).length;
 
   $('#content').innerHTML = `
     <h2 class="text-2xl font-bold mb-1">📦 Estoque & Vendas</h2>
@@ -1636,10 +1641,11 @@ VIEWS.estoque = function() {
         </thead>
         <tbody>${lotes.filter(x => x.disponivel > 0 || x.saidas > 0).map(({l,b,e,saidas,disponivel,idade}) => {
           let statusPag, corStatus;
-          if (idade < 1) { statusPag = 'aguardando início'; corStatus = 'bg-gray-100 text-gray-600'; }
-          else if (idade <= 12) { statusPag = 'pagando (mês ' + idade + '/12)'; corStatus = 'bg-green-100 text-green-800'; }
-          else if (idade === 13) { statusPag = 'retenção (mês 13)'; corStatus = 'bg-orange-100 text-orange-800'; }
-          else { statusPag = 'parou (' + idade + 'm)'; corStatus = 'bg-red-100 text-red-800'; }
+          const parc = idade + 1; // mes do plantio = parcela 1
+          if (parc < 1) { statusPag = 'antes do plantio'; corStatus = 'bg-gray-100 text-gray-600'; }
+          else if (parc <= 12) { statusPag = 'pagando (parc ' + parc + '/12)'; corStatus = 'bg-green-100 text-green-800'; }
+          else if (parc === 13) { statusPag = 'retenção (parc 13)'; corStatus = 'bg-orange-100 text-orange-800'; }
+          else { statusPag = 'parou (parc ' + parc + ')'; corStatus = 'bg-red-100 text-red-800'; }
           return '<tr class="border-t hover:bg-gray-50 ' + (disponivel===0?'opacity-60':'') + '">' +
             '<td class="p-2">' + escapeHtml(e?.nome||'?') + '</td>' +
             '<td class="font-mono">' + escapeHtml(b?.numero||'?') + '</td>' +
