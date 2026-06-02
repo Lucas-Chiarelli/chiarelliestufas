@@ -2426,4 +2426,4 @@ $('#cfgClear').addEventListener('click', () => {
 $$('.nav-btn').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
 $('#menuBtn').addEventListener('click', () => $('#sidebar').classList.toggle('hidden'));
 
-})
+})();
