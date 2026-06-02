@@ -4,7 +4,7 @@
 (function(){
 if (window.__ESTUFAS_LOADED__) { console.warn('app.js carregado 2x'); return; }
 window.__ESTUFAS_LOADED__ = true;
-console.log('%c🌱 Chiarelli Estufas — app.js v37 (Bloco A/C estufas separadas)', 'background:#15803d;color:#fff;padding:4px 8px;border-radius:4px;font-weight:bold');
+console.log('%c🌱 Chiarelli Estufas — app.js v38 (fix ref=dia1 do mes)', 'background:#15803d;color:#fff;padding:4px 8px;border-radius:4px;font-weight:bold');
 
 window.addEventListener('error', e => {
   const div = document.createElement('div');
@@ -134,7 +134,10 @@ function valorPagamentoLoteMes(lote, ano, mes) {
   const e = byId('estufas', b.estufa_id);
   if (!e) return { valor:0, parcela:0, motivo:'sem estufa', valorUnitario:0 };
   const preco = getPrecoLote(lote, e.sitio);
-  const ref = new Date(ano, mes, 0);
+  // Usa PRIMEIRO dia do mes de referencia (nao o ultimo) — assim a parcela computada
+  // bate com o badge na tela de Lotes (que usa "hoje"). Caso contrario plantios apos
+  // o dia 1 caem erroneamente em vencido no fim do mes.
+  const ref = new Date(ano, mes-1, 1);
   const idd = idadeMeses(lote.data_plantio, ref);
   if (idd < 0) return { valor:0, parcela:0, motivo:'antes do plantio', valorUnitario:0 };
   const vt = Number(preco.valor_total), vf = Number(preco.valor_final);
