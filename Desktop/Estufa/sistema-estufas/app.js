@@ -103,8 +103,19 @@ function getPrecoLote(lote, sitio) {
   return ps[0] || { valor_total:1.30, valor_final:0.15 };
 }
 
+// CRITICO: parseDataLocal evita bug de fuso horario
+// 'YYYY-MM-DD' parseado com new Date() vira UTC, e em UTC-3 (Brasil) o dia 01 vira dia 30/anterior
+function parseDataLocal(d) {
+  if (d instanceof Date) return d;
+  if (typeof d === 'string') {
+    const s = d.slice(0,10);
+    const [y, m, day] = s.split('-').map(Number);
+    if (y && m && day) return new Date(y, m-1, day); // local time, sem TZ
+  }
+  return new Date(d);
+}
 function idadeMeses(dPlantio, ref) {
-  const p = new Date(dPlantio), r = new Date(ref);
+  const p = parseDataLocal(dPlantio), r = parseDataLocal(ref);
   let m = (r.getFullYear()-p.getFullYear())*12 + (r.getMonth()-p.getMonth());
   if (r.getDate() < p.getDate()) m--;
   return m;
