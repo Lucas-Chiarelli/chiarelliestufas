@@ -4,7 +4,7 @@
 (function(){
 if (window.__ESTUFAS_LOADED__) { console.warn('app.js carregado 2x'); return; }
 window.__ESTUFAS_LOADED__ = true;
-console.log('%c🌱 Chiarelli Estufas — app.js v35 (TZ fix + bloco)', 'background:#15803d;color:#fff;padding:4px 8px;border-radius:4px;font-weight:bold');
+console.log('%c🌱 Chiarelli Estufas — app.js v37 (Bloco A/C estufas separadas)', 'background:#15803d;color:#fff;padding:4px 8px;border-radius:4px;font-weight:bold');
 
 window.addEventListener('error', e => {
   const div = document.createElement('div');
@@ -18,7 +18,7 @@ window.STATE = STATE;  // expor pra onclick/onchange inline
 var SITIO_LABEL = { sao_jose:'São José', bela_vista:'Bela Vista', santo_antonio:'Santo Antônio' };
 
 var DB = {
-  _key: 'estufas_demo_v6',
+  _key: 'estufas_demo_v8',
   async loadAll() {
     if (STATE.mode === 'demo') {
       let raw = localStorage.getItem(this._key);
