@@ -4,6 +4,7 @@
 (function(){
 if (window.__ESTUFAS_LOADED__) { console.warn('app.js carregado 2x'); return; }
 window.__ESTUFAS_LOADED__ = true;
+console.log('%c🌱 Chiarelli Estufas — app.js v33 (com fix TZ)', 'background:#15803d;color:#fff;padding:4px 8px;border-radius:4px;font-weight:bold');
 
 window.addEventListener('error', e => {
   const div = document.createElement('div');
