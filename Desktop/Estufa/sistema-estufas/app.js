@@ -1059,13 +1059,25 @@ function renderFolhaIndividual(f, c, ano, mes) {
       subParcelas += d.valor;
     }
   }
+  // Ordena bancadas dentro de cada estufa em ordem numerica natural (6, 6b, 7, ..., 70, 71)
+  for (const g of Object.values(porEstufa)) {
+    g.items.sort((a, b) => {
+      const na = (a.bancada?.numero || '').toString();
+      const nb = (b.bancada?.numero || '').toString();
+      return na.localeCompare(nb, undefined, { numeric: true, sensitivity: 'base' });
+    });
+  }
+  // Ordena as estufas alfabeticamente
+  const estufasOrdenadas = Object.values(porEstufa).sort((a, b) =>
+    (a.estufa?.nome || '').localeCompare(b.estufa?.nome || '', undefined, { numeric: true })
+  );
   return `
     <div class="text-center mb-4">
       <h2 class="text-xl font-bold">FOLHA DE PAGAMENTO</h2>
       <p class="text-lg">${escapeHtml(f.nome)}</p>
       <p class="text-sm text-gray-600">Referência: ${nomesMes(mes)} / ${ano}</p>
     </div>
-    ${Object.values(porEstufa).map(g => `
+    ${estufasOrdenadas.map(g => `
       <h4 class="font-bold mt-4 bg-gray-100 p-2 rounded">
         ${escapeHtml(g.estufa?.nome||'?')}
         <span class="text-xs font-normal text-gray-600 ml-2">${SITIO_LABEL[g.estufa?.sitio]||''}</span>
