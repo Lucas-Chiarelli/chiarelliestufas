@@ -4,7 +4,7 @@
 (function(){
 if (window.__ESTUFAS_LOADED__) { console.warn('app.js carregado 2x'); return; }
 window.__ESTUFAS_LOADED__ = true;
-console.log('%c🌱 Chiarelli Estufas — app.js v33 (com fix TZ)', 'background:#15803d;color:#fff;padding:4px 8px;border-radius:4px;font-weight:bold');
+console.log('%c🌱 Chiarelli Estufas — app.js v35 (TZ fix + bloco)', 'background:#15803d;color:#fff;padding:4px 8px;border-radius:4px;font-weight:bold');
 
 window.addEventListener('error', e => {
   const div = document.createElement('div');
@@ -783,12 +783,17 @@ function formLote(lote) {
   lote = lote || { qtd:0, tipo:'muda_normal', data_plantio: new Date().toISOString().slice(0,10) };
   openModal(isNew?'Novo lote':'Editar lote', `
     <form id="loteForm" class="space-y-3">
-      <div class="grid grid-cols-2 gap-3">
+      <div class="grid grid-cols-3 gap-3">
         <div>
           <label class="text-sm font-medium">Estufa</label>
           <select id="lEstufa" required class="w-full mt-1 px-3 py-2 border rounded">
             ${STATE.data.estufas.map(e => '<option value="'+e.id+'">'+escapeHtml(e.nome)+' ('+SITIO_LABEL[e.sitio]+')</option>').join('')}
           </select>
+        </div>
+        <div>
+          <label class="text-sm font-medium">Bloco</label>
+          <input id="lBloco" type="text" placeholder="ex: A, B, C" maxlength="10" class="w-full mt-1 px-3 py-2 border rounded uppercase">
+          <p class="text-[10px] text-gray-500 mt-0.5">opcional</p>
         </div>
         <div>
           <label class="text-sm font-medium">Bancada</label>
@@ -845,7 +850,7 @@ function formLote(lote) {
   `);
   if (lote.bancada_id) {
     const b = byId('bancadas', lote.bancada_id);
-    if (b) { $('#lEstufa').value = b.estufa_id; $('#lBancada').value = b.numero; }
+    if (b) { $('#lEstufa').value = b.estufa_id; $('#lBancada').value = b.numero; $('#lBloco').value = b.bloco || ''; }
   }
   rebuildFuncSelect($('#lEstufa').value, lote.funcionario_id);
   $('#lEstufa').addEventListener('change', () => rebuildFuncSelect($('#lEstufa').value, null));
@@ -853,8 +858,14 @@ function formLote(lote) {
     e.preventDefault();
     const estufaId = $('#lEstufa').value;
     const bancadaNum = $('#lBancada').value.trim();
+    const blocoVal = ($('#lBloco').value || '').trim().toUpperCase() || null;
     let bancada = STATE.data.bancadas.find(b => b.estufa_id === estufaId && b.numero === bancadaNum);
-    if (!bancada) bancada = await DB.insert('bancadas', { estufa_id: estufaId, numero: bancadaNum, funcionario_id: $('#lFunc').value || null });
+    if (!bancada) {
+      bancada = await DB.insert('bancadas', { estufa_id: estufaId, numero: bancadaNum, funcionario_id: $('#lFunc').value || null, bloco: blocoVal });
+    } else if (bancada.bloco !== blocoVal) {
+      await DB.update('bancadas', bancada.id, { bloco: blocoVal });
+      bancada.bloco = blocoVal;
+    }
     const payload = {
       bancada_id: bancada.id,
       funcionario_id: $('#lFunc').value || null,
@@ -1042,29 +1053,43 @@ function renderFolhaIndividual(f, c, ano, mes) {
         <div class="text-center"><div class="border-t border-gray-400 pt-2">Responsável</div></div>
       </div>`;
   }
+  // Agrupa: estufa -> bloco -> items
   const porEstufa = {};
   let subParcelas = 0, subRetencao = 0;
   const bancadasRet = [];
   for (const d of c.detalhes) {
-    const k = d.estufa?.id || '?';
-    porEstufa[k] = porEstufa[k] || { estufa:d.estufa, items:[], subtotal:0, mudas:0, enxertos:0 };
-    porEstufa[k].items.push(d);
-    porEstufa[k].subtotal += d.valor;
-    porEstufa[k].mudas += d.lote.qtd;
-    porEstufa[k].enxertos += qtdEnxertos(d.lote);
+    const ek = d.estufa?.id || '?';
+    porEstufa[ek] = porEstufa[ek] || { estufa:d.estufa, blocos:{}, subtotal:0, mudas:0, enxertos:0 };
+    const bloco = (d.bancada?.bloco || '').toString().trim().toUpperCase() || '—';
+    porEstufa[ek].blocos[bloco] = porEstufa[ek].blocos[bloco] || { bloco, items:[], subtotal:0, mudas:0, enxertos:0 };
+    porEstufa[ek].blocos[bloco].items.push(d);
+    porEstufa[ek].blocos[bloco].subtotal += d.valor;
+    porEstufa[ek].blocos[bloco].mudas += d.lote.qtd;
+    porEstufa[ek].blocos[bloco].enxertos += qtdEnxertos(d.lote);
+    porEstufa[ek].subtotal += d.valor;
+    porEstufa[ek].mudas += d.lote.qtd;
+    porEstufa[ek].enxertos += qtdEnxertos(d.lote);
     if (d.motivo && d.motivo.includes('retencao')) {
       subRetencao += d.valor;
-      bancadasRet.push((d.estufa?.nome||'?') + ' BC' + (d.bancada?.numero||'?'));
+      bancadasRet.push((d.estufa?.nome||'?') + (bloco!=='—'?' Bloco '+bloco:'') + ' BC' + (d.bancada?.numero||'?'));
     } else {
       subParcelas += d.valor;
     }
   }
-  // Ordena bancadas dentro de cada estufa em ordem numerica natural (6, 6b, 7, ..., 70, 71)
+  // Ordena bancadas dentro de cada bloco em ordem numerica natural
   for (const g of Object.values(porEstufa)) {
-    g.items.sort((a, b) => {
-      const na = (a.bancada?.numero || '').toString();
-      const nb = (b.bancada?.numero || '').toString();
-      return na.localeCompare(nb, undefined, { numeric: true, sensitivity: 'base' });
+    for (const bl of Object.values(g.blocos)) {
+      bl.items.sort((a, b) => {
+        const na = (a.bancada?.numero || '').toString();
+        const nb = (b.bancada?.numero || '').toString();
+        return na.localeCompare(nb, undefined, { numeric: true, sensitivity: 'base' });
+      });
+    }
+    // Ordena os blocos alfabeticamente, com "—" (sem bloco) por ultimo
+    g.blocosOrdenados = Object.values(g.blocos).sort((a, b) => {
+      if (a.bloco === '—') return 1;
+      if (b.bloco === '—') return -1;
+      return a.bloco.localeCompare(b.bloco, undefined, { numeric: true });
     });
   }
   // Ordena as estufas alfabeticamente
@@ -1082,41 +1107,55 @@ function renderFolhaIndividual(f, c, ano, mes) {
         ${escapeHtml(g.estufa?.nome||'?')}
         <span class="text-xs font-normal text-gray-600 ml-2">${SITIO_LABEL[g.estufa?.sitio]||''}</span>
       </h4>
-      <table class="w-full text-xs border mb-2">
-        <thead class="bg-gray-50">
-          <tr>
-            <th class="p-2 text-left border">BC</th>
-            <th class="p-2 text-right border">Qtd porta-enx.</th>
-            <th class="p-2 text-right border">Qtd enxertos</th>
-            <th class="p-2 text-left border">Porta-enxerto</th>
-            <th class="p-2 text-left border">Variedade</th>
-            <th class="p-2 text-center border">Plantio</th>
-            <th class="p-2 text-center border">Parcela</th>
-            <th class="p-2 text-right border">Valor unit.</th>
-            <th class="p-2 text-right border">Valor total</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${g.items.map(d => `<tr>
-            <td class="p-2 border font-mono">${escapeHtml(d.bancada?.numero||'?')}</td>
-            <td class="p-2 border text-right">${fmtNum(d.lote.qtd)}</td>
-            <td class="p-2 border text-right">${fmtNum(qtdEnxertos(d.lote))}</td>
-            <td class="p-2 border">${escapeHtml(d.lote.porta_enxerto||'-')}</td>
-            <td class="p-2 border">${escapeHtml(d.lote.variedade||'-')}</td>
-            <td class="p-2 border text-center">${fmtDate(d.lote.data_plantio)}</td>
-            <td class="p-2 border text-center">${d.parcela}/12${d.motivo.includes('retencao')?' <b class="text-red-700">+RET</b>':''}</td>
-            <td class="p-2 border text-right font-mono">${fmtUnitario(d.valorUnitario)}</td>
-            <td class="p-2 border text-right font-mono font-semibold">${fmtMoneyExato(d.valor)}</td>
-          </tr>`).join('')}
-          <tr class="bg-gray-100 font-bold">
-            <td class="p-2 border">Subtotal</td>
-            <td class="p-2 border text-right">${fmtNum(g.mudas)}</td>
-            <td class="p-2 border text-right">${fmtNum(g.enxertos)}</td>
-            <td colspan="5" class="border"></td>
-            <td class="p-2 border text-right font-mono">${fmtMoneyExato(g.subtotal)}</td>
-          </tr>
-        </tbody>
-      </table>
+      ${g.blocosOrdenados.map(bl => `
+        ${bl.bloco !== '—' || g.blocosOrdenados.length > 1 ? `
+          <div class="bg-blue-50 border-l-4 border-blue-500 px-3 py-1.5 mt-2 mb-0 text-sm font-bold text-blue-900">
+            ${bl.bloco === '—' ? 'Sem bloco definido' : 'Bloco ' + escapeHtml(bl.bloco)}
+            <span class="font-normal text-xs text-blue-700 ml-2">(${bl.items.length} bancada${bl.items.length>1?'s':''} · ${fmtNum(bl.mudas)} mudas)</span>
+          </div>
+        ` : ''}
+        <table class="w-full text-xs border mb-2">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="p-2 text-left border">BC</th>
+              <th class="p-2 text-right border">Qtd porta-enx.</th>
+              <th class="p-2 text-right border">Qtd enxertos</th>
+              <th class="p-2 text-left border">Porta-enxerto</th>
+              <th class="p-2 text-left border">Variedade</th>
+              <th class="p-2 text-center border">Plantio</th>
+              <th class="p-2 text-center border">Parcela</th>
+              <th class="p-2 text-right border">Valor unit.</th>
+              <th class="p-2 text-right border">Valor total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${bl.items.map(d => `<tr>
+              <td class="p-2 border font-mono">${escapeHtml(d.bancada?.numero||'?')}</td>
+              <td class="p-2 border text-right">${fmtNum(d.lote.qtd)}</td>
+              <td class="p-2 border text-right">${fmtNum(qtdEnxertos(d.lote))}</td>
+              <td class="p-2 border">${escapeHtml(d.lote.porta_enxerto||'-')}</td>
+              <td class="p-2 border">${escapeHtml(d.lote.variedade||'-')}</td>
+              <td class="p-2 border text-center">${fmtDate(d.lote.data_plantio)}</td>
+              <td class="p-2 border text-center">${d.parcela}/12${d.motivo.includes('retencao')?' <b class="text-red-700">+RET</b>':''}</td>
+              <td class="p-2 border text-right font-mono">${fmtUnitario(d.valorUnitario)}</td>
+              <td class="p-2 border text-right font-mono font-semibold">${fmtMoneyExato(d.valor)}</td>
+            </tr>`).join('')}
+            <tr class="bg-blue-50 font-bold">
+              <td class="p-2 border">${bl.bloco === '—' ? 'Subtotal sem bloco' : 'Subtotal Bloco ' + escapeHtml(bl.bloco)}</td>
+              <td class="p-2 border text-right">${fmtNum(bl.mudas)}</td>
+              <td class="p-2 border text-right">${fmtNum(bl.enxertos)}</td>
+              <td colspan="5" class="border"></td>
+              <td class="p-2 border text-right font-mono">${fmtMoneyExato(bl.subtotal)}</td>
+            </tr>
+          </tbody>
+        </table>
+      `).join('')}
+      ${g.blocosOrdenados.length > 1 ? `
+        <div class="bg-gray-200 px-3 py-1.5 mt-1 mb-2 text-sm font-bold text-gray-800 flex justify-between">
+          <span>Total da estufa ${escapeHtml(g.estufa?.nome||'?')} · ${fmtNum(g.mudas)} mudas</span>
+          <span class="font-mono">${fmtMoneyExato(g.subtotal)}</span>
+        </div>
+      ` : ''}
     `).join('')}
     <div class="bg-white border-2 border-green-700 rounded-xl mt-4 overflow-hidden">
       <div class="px-4 py-2 flex justify-between items-baseline border-b">
@@ -2342,7 +2381,7 @@ $('#loginForm').addEventListener('submit', async e => {
 $('#signupBtn').addEventListener('click', async () => {
   $('#loginErr').classList.add('hidden');
   try {
-    if (!$('#loginEmail').value || $('#loginPass').value.length < 6) throw new Error('Email + senha (mín 6 chars)');
+    if (!$('#loginEmail').value || $('#loginPass').value.length < 6) throw new Error('Email + senha (min 6 chars)');
     await doSignup($('#loginEmail').value, $('#loginPass').value);
   } catch (err) { $('#loginErr').textContent = err.message; $('#loginErr').classList.remove('hidden'); }
 });
@@ -2387,4 +2426,4 @@ $('#cfgClear').addEventListener('click', () => {
 $$('.nav-btn').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
 $('#menuBtn').addEventListener('click', () => $('#sidebar').classList.toggle('hidden'));
 
-})();
+})
